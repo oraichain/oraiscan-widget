@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
-import { getDelegateRewards } from '../../../utils/http'
+import { computed, ref } from 'vue';
+import { getDelegateRewards } from '../../../utils/http';
+import { DelegationDelegatorReward } from 'cosmjs-types/cosmos/distribution/v1beta1/distribution';
 
 const props = defineProps({
     endpoint: { type: String, required: true },
@@ -8,41 +9,41 @@ const props = defineProps({
     params: String,
 });
 
-const rewards = ref([] as { reward: { amount: string, denom: string }, validator_address: string }[])
+const rewards = ref([] as DelegationDelegatorReward[]);
 
 const msgs = computed(() => {
-    return rewards.value.map(x => {
+    return rewards.value.map((x) => {
         return {
             typeUrl: '/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward',
             value: {
                 delegatorAddress: props.sender,
-                validatorAddress: x.validator_address,
+                validatorAddress: x.validatorAddress,
             },
-        }
-    })
-})
+        };
+    });
+});
 
 const isValid = computed(() => {
-    let ok = true
-    let error = ""
+    let ok = true;
+    let error = '';
     if (!props.sender) {
-        ok = false
-        error = "Sender is empty"
+        ok = false;
+        error = 'Sender is empty';
     }
     if (rewards.value.length === 0) {
-        ok = false
-        error = "No delegation found"
+        ok = false;
+        error = 'No delegation found';
     }
-    return { ok, error }
-})
+    return { ok, error };
+});
 
 function initial() {
-    getDelegateRewards(props.endpoint, props.sender).then(x => {
-        rewards.value = x.rewards
-    })
+    getDelegateRewards(props.endpoint, props.sender).then((x) => {
+        rewards.value = x.rewards;
+    });
 }
 
-defineExpose({ msgs, isValid, initial })
+defineExpose({ msgs, isValid, initial });
 </script>
 <template>
     <div>
@@ -50,7 +51,11 @@ defineExpose({ msgs, isValid, initial })
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
+            <input
+                :value="sender"
+                type="text"
+                class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600"
+            />
         </div>
     </div>
 </template>

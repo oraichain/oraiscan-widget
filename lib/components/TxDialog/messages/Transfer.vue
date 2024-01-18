@@ -7,16 +7,18 @@ import { IBCPath } from '@ping-pub/chain-registry-client/dist/types';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { TokenUnitConverter } from '../../../utils/TokenUnitConverter';
+import { DenomTrace } from 'cosmjs-types/ibc/applications/transfer/v1/transfer';
+import { Metadata } from 'cosmjs-types/cosmos/bank/v1beta1/bank';
 dayjs.extend(utc);
 
 const props = defineProps({
     endpoint: { type: String, required: true },
     sender: { type: String, required: true },
     balances: Object as PropType<Coin[]>,
-    metadata: Object as PropType<Record<string, CoinMetadata>>,
+    metadata: Object as PropType<Record<string, Metadata>>,
     params: String,
 });
-const params = computed(() => JSON.parse(props.params || "{}"))
+const params = computed(() => JSON.parse(props.params || '{}'));
 const chainName = params.value.chain_name;
 
 const amount = ref('');
@@ -28,9 +30,7 @@ const chains = ref([] as IBCPath[]);
 const sourceChain = ref(
     {} as { channel_id: string; port_id: string } | undefined
 );
-const ibcDenomTraces = ref(
-    {} as Record<string, { path: string; base_denom: string }>
-);
+const ibcDenomTraces = ref({} as Record<string, DenomTrace | undefined>);
 
 const client = new ChainRegistryClient();
 
@@ -79,15 +79,15 @@ function updateIBCToken() {
     if (!denom.value.startsWith('ibc/')) return;
     if (ibcDenomTraces.value[denom.value]) {
         const trace = ibcDenomTraces.value[denom.value];
-        const split = trace.path.split('/');
+        const split = trace!.path.split('/');
         sourceChain.value = {
             channel_id: split[1],
             port_id: split[0],
         };
     } else {
         getDenomTraces(props.endpoint, hash).then((trace) => {
-            ibcDenomTraces.value[denom.value] = trace.denom_trace;
-            const split = trace.denom_trace.path.split('/');
+            ibcDenomTraces.value[denom.value] = trace.denomTrace;
+            const split = trace.denomTrace!.path.split('/');
             sourceChain.value = {
                 channel_id: split[1],
                 port_id: split[0],
@@ -123,7 +123,7 @@ const units = computed(() => {
         amountDenom.value = denom.value;
         return [{ denom: denom.value, exponent: 0, aliases: [] }];
     }
-    const list = props.metadata[denom.value].denom_units.sort(
+    const list = props.metadata[denom.value].denomUnits.sort(
         (a, b) => b.exponent - a.exponent
     );
     if (list.length > 0) amountDenom.value = list[0].denom;
@@ -154,12 +154,12 @@ function initial() {
     });
 
     getStakingParam(props.endpoint).then((x) => {
-        denom.value = x.params.bond_denom;
+        denom.value = x.params.bondDenom;
     });
 }
 
 function formatDenom(v: any) {
-    return String(v).substring(0, 10)
+    return String(v).substring(0, 10);
 }
 
 defineExpose({ msgs, isValid, initial });
@@ -229,7 +229,8 @@ defineExpose({ msgs, isValid, initial });
             <label class="label">
                 <span class="label-text">Amount</span>
                 <span>
-                    {{ available.display.amount}} {{ formatDenom(available.display.denom) }}
+                    {{ available.display.amount }}
+                    {{ formatDenom(available.display.denom) }}
                 </span>
             </label>
             <label class="input-group">
@@ -240,7 +241,9 @@ defineExpose({ msgs, isValid, initial });
                     class="input border border-gray-300 dark:border-gray-600 w-full"
                 />
                 <select v-model="amountDenom" class="select select-bordered">
-                    <option v-for="u in units" :value="u.denom">{{ formatDenom(u.denom) }}</option>
+                    <option v-for="u in units" :value="u.denom">
+                        {{ formatDenom(u.denom) }}
+                    </option>
                 </select>
             </label>
         </div>

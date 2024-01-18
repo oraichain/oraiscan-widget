@@ -82,7 +82,7 @@ async function initData() {
         view.value = 'swap';
         localChainInfo.value = {} as Chain;
         localCoinInfo.value = [];
-        recipient.value = localAddress(sender.value.cosmosAddress)
+        recipient.value = localAddress(sender.value.cosmosAddress);
         await client
             .fetchChainInfo(props.chainName)
             .then((res) => {
@@ -113,7 +113,7 @@ async function initData() {
         });
 
         getStakingParam(props.endpoint).then((x) => {
-            defaultDenom.value = x.params.bond_denom;
+            defaultDenom.value = x.params.bondDenom;
         });
         getOsmosisPools(OSMOSIS_REST).then((res) => {
             allPools.value = res.pools;
@@ -175,9 +175,9 @@ function findTokenUrl(coinInfo?: Asset) {
         coinInfo?.logo_URIs?.jpeg;
     return url
         ? url.replace(
-            'https://raw.githubusercontent.com/cosmos/chain-registry/master',
-            'https://registry.ping.pub'
-        )
+              'https://raw.githubusercontent.com/cosmos/chain-registry/master',
+              'https://registry.ping.pub'
+          )
         : '';
 }
 
@@ -382,7 +382,7 @@ async function doSwap() {
             'Token Convert from ping.pub'
         );
         if (response.code === 0) {
-            await showResult(response.transactionHash)
+            await showResult(response.transactionHash);
             await getBalance(
                 OSMOSIS_REST,
                 osmoAddress(sender.value.cosmosAddress)
@@ -434,9 +434,10 @@ async function doDeposit() {
     const latest = await getLatestBlock(props.endpoint);
     const acc = await getAccount(props.endpoint, address);
 
-    const chainId = latest.block.header.chain_id;
+    const chainId = latest.block.header.chainId;
     const timeout = Date.now() + new Date().getTimezoneOffset() + 3600000;
-    const amount = Number(depositAmount.value || 0) * 10 ** swapIn.value.decimals;
+    const amount =
+        Number(depositAmount.value || 0) * 10 ** swapIn.value.decimals;
     const tx = {
         chainId,
         signerAddress: address,
@@ -462,9 +463,9 @@ async function doDeposit() {
         },
         memo: '',
         signerData: {
-            accountNumber: Number(acc.account.account_number),
-            sequence: Number(acc.account.sequence),
-            chainId: chainId.value,
+            accountNumber: Number(acc?.accountNumber),
+            sequence: Number(acc?.sequence),
+            chainId: chainId,
         },
     };
 
@@ -474,7 +475,7 @@ async function doDeposit() {
         //   console.log("gasInfo:", gasInfo)
         const txRaw = await client.sign(tx);
         const response = await client.broadcastTx(props.endpoint, txRaw);
-        if (response.tx_response?.code === 0) {
+        if (response.code === 0) {
             setTimeout(async () => {
                 await getBalance(
                     OSMOSIS_REST,
@@ -502,7 +503,7 @@ async function doDeposit() {
 
 // withdraw logic
 const withdrawAmount = ref('');
-const recipient = ref(localAddress(sender.value.cosmosAddress))
+const recipient = ref(localAddress(sender.value.cosmosAddress));
 const disableWithdraw = computed(() => {
     const token = swapOut.value;
     if (token) {
@@ -587,7 +588,7 @@ async function doWithdraw() {
             if (response.rawLog) error.value = response.rawLog;
         }
     } catch (err) {
-        error.value = err
+        error.value = err;
     }
 
     sending.value = false;
@@ -599,7 +600,7 @@ async function connect() {
     try {
         const latest = await getLatestBlock(props.endpoint);
         const wa = createWallet(WalletName.Keplr, {
-            chainId: latest.block.header.chain_id,
+            chainId: latest.block.header.chainId,
             hdPath: props.hdPath || DEFAULT_HDPATH,
         });
         await wa
@@ -620,14 +621,14 @@ async function connect() {
                 error.value = e;
             });
         initData();
-        view.value = 'swap'
+        view.value = 'swap';
     } catch (e) {
         error.value = e.message;
     }
     sending.value = false;
 }
 
-// Excuting result 
+// Excuting result
 const delay = ref(0);
 const step = ref(0);
 const msg = ref('');
@@ -651,11 +652,11 @@ function fetchTx(tx: string) {
     getTxByHash(OSMOSIS_REST, tx)
         .then((res) => {
             step.value = 100;
-            if (res.tx_response.code > 0) {
-                error.value = res.tx_response.raw_log;
+            if (res.txResponse && res.txResponse?.code > 0) {
+                error.value = res.txResponse?.rawLog;
             } else {
                 msg.value = `Congratulations! Swap completed successfully.`;
-                emit('completed', { hash: tx, });
+                emit('completed', { hash: tx });
             }
         })
         .catch(() => {
@@ -670,21 +671,39 @@ function fetchTx(tx: string) {
 <template>
     <div>
         <!-- modal content -->
-        <input v-model="open" type="checkbox" id="PingTokenConvert" class="modal-toggle" @change="initData()" />
+        <input
+            v-model="open"
+            type="checkbox"
+            id="PingTokenConvert"
+            class="modal-toggle"
+            @change="initData()"
+        />
 
         <label for="PingTokenConvert" class="modal cursor-pointer">
             <label class="modal-box dark:bg-[#2a2a3a] rounded-lg" for="">
                 <div v-show="view === 'swap'">
-                    <div class="absolute right-4 top-4 dropdown dropdown-end dropdown-hover">
+                    <div
+                        class="absolute right-4 top-4 dropdown dropdown-end dropdown-hover"
+                    >
                         <label tabindex="0" class="text-info">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                class="w-6 h-6 stroke-current">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                class="w-6 h-6 stroke-current"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
                             </svg>
                         </label>
-                        <div tabindex="0"
-                            class="card compact dropdown-content dark:bg-info-content bg-slate-300 shadow rounded-box w-64 z-40">
+                        <div
+                            tabindex="0"
+                            class="card compact dropdown-content dark:bg-info-content bg-slate-300 shadow rounded-box w-64 z-40"
+                        >
                             <div class="card-body">
                                 <ul class="text-right">
                                     <li>Liquidity is provided by Osmosis</li>
@@ -694,31 +713,54 @@ function fetchTx(tx: string) {
                         </div>
                     </div>
                     <h3 class="text-xl font-semibold">Token Convert</h3>
-                    <div v-if="!osmosisPath || chainName === 'osmosis'" class="text-error mt-3">
-                        <span>This feature is not available [{{
-                            chainName
-                        }}]</span>
+                    <div
+                        v-if="!osmosisPath || chainName === 'osmosis'"
+                        class="text-error mt-3"
+                    >
+                        <span
+                            >This feature is not available [{{
+                                chainName
+                            }}]</span
+                        >
                     </div>
                     <div
-                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4">
+                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4"
+                    >
                         <div class="dropdown">
-                            <label tabindex="0" class="flex items-center h-12 px-4 cursor-pointer">
-                                <img :src="swapIn?.coinImageUrl" class="w-8 h-8 mr-3 rounded-full" />
+                            <label
+                                tabindex="0"
+                                class="flex items-center h-12 px-4 cursor-pointer"
+                            >
+                                <img
+                                    :src="swapIn?.coinImageUrl"
+                                    class="w-8 h-8 mr-3 rounded-full"
+                                />
                                 <div class="text-lg font-semibold mr-2">
                                     {{ swapIn?.symbol }}
                                 </div>
                                 <Icon icon="mdi:chevron-down" class="text-lg" />
                             </label>
-                            <div tabindex="0" class="dropdown-content shadow bg-base-100 rounded-lg w-64 z-40">
+                            <div
+                                tabindex="0"
+                                class="dropdown-content shadow bg-base-100 rounded-lg w-64 z-40"
+                            >
                                 <div class="py-2">
-                                    <div v-for="(item, index) in inTokens" :key="index"
+                                    <div
+                                        v-for="(item, index) in inTokens"
+                                        :key="index"
                                         class="flex items-center px-4 py-2 hover:bg-gray-200 dark:hover:bg-[#232333] cursor-pointer"
-                                        @click="selectInput(item)">
-                                        <img class="w-7 h-7 rounded-full mr-2" :src="item.coinImageUrl" />
+                                        @click="selectInput(item)"
+                                    >
+                                        <img
+                                            class="w-7 h-7 rounded-full mr-2"
+                                            :src="item.coinImageUrl"
+                                        />
                                         <div class="flex-1 text-sm">
                                             {{ item.symbol }}
                                         </div>
-                                        <div class="text-sm font-semibold text-gray-600">
+                                        <div
+                                            class="text-sm font-semibold text-gray-600"
+                                        >
                                             {{
                                                 showBalance(
                                                     item.ibcDenom || item.denom,
@@ -730,53 +772,98 @@ function fetchTx(tx: string) {
                                 </div>
                             </div>
                         </div>
-                        <input v-model="amountIn" type="number" placeholder="1"
-                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold" />
+                        <input
+                            v-model="amountIn"
+                            type="number"
+                            placeholder="1"
+                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold"
+                        />
                     </div>
 
-                    <div class="flex items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg">
+                    <div
+                        class="flex items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg"
+                    >
                         <div class="mr-3 text-sm">Balance:</div>
                         <div class="text-base font-semibold">
                             {{
                                 showBalance(swapIn?.ibcDenom, swapIn?.decimals)
                             }}
                         </div>
-                        <Icon v-if="depositable" icon="mdi:plus-box-outline" class="ml-2 cursor-pointer"
-                            @click="switchView('deposit')" />
+                        <Icon
+                            v-if="depositable"
+                            icon="mdi:plus-box-outline"
+                            class="ml-2 cursor-pointer"
+                            @click="switchView('deposit')"
+                        />
                     </div>
 
                     <!-- switch btn -->
                     <div class="flex items-center justify-center -mt-3 -mb-3">
-                        <div class="inline-block px-4 cursor-pointer" @click="switchDirection">
-                            <Icon icon="mdi:arrow-down-circle" color="#676cf6"
-                                class="text-4xl dark:bg-gray-50 rounded-full origin-center duration-300 transform hover:rotate-180" />
+                        <div
+                            class="inline-block px-4 cursor-pointer"
+                            @click="switchDirection"
+                        >
+                            <Icon
+                                icon="mdi:arrow-down-circle"
+                                color="#676cf6"
+                                class="text-4xl dark:bg-gray-50 rounded-full origin-center duration-300 transform hover:rotate-180"
+                            />
                         </div>
                     </div>
 
-                    <div class="flex items-center h-14 rounded-tl-lg rounded-tr-lg bg-gray-100 dark:bg-[#232333]">
+                    <div
+                        class="flex items-center h-14 rounded-tl-lg rounded-tr-lg bg-gray-100 dark:bg-[#232333]"
+                    >
                         <div v-if="outTokens.length === 0">
-                            <span v-if="error" class="text-red-500">No tradable tokens found.</span>
-                            <button v-else class="btn btn-ghost" :class="{ 'loading relative start-0': sending }">
+                            <span v-if="error" class="text-red-500"
+                                >No tradable tokens found.</span
+                            >
+                            <button
+                                v-else
+                                class="btn btn-ghost"
+                                :class="{ 'loading relative start-0': sending }"
+                            >
                                 loading...
                             </button>
                         </div>
-                        <div v-if="outTokens && outTokens.length > 0" class="dropdown">
-                            <label tabindex="0" class="flex items-center h-12 px-4 cursor-pointer">
-                                <img :src="swapOut?.coinImageUrl" class="w-8 h-8 mr-3 rounded-full" />
+                        <div
+                            v-if="outTokens && outTokens.length > 0"
+                            class="dropdown"
+                        >
+                            <label
+                                tabindex="0"
+                                class="flex items-center h-12 px-4 cursor-pointer"
+                            >
+                                <img
+                                    :src="swapOut?.coinImageUrl"
+                                    class="w-8 h-8 mr-3 rounded-full"
+                                />
                                 <div class="text-lg font-semibold mr-2">
                                     {{ swapOut?.symbol }}
                                 </div>
                                 <Icon icon="mdi:chevron-down" class="text-lg" />
                             </label>
-                            <div tabindex="0" class="compact dropdown-content shadow bg-base-100 w-64 rounded-lg">
+                            <div
+                                tabindex="0"
+                                class="compact dropdown-content shadow bg-base-100 w-64 rounded-lg"
+                            >
                                 <div class="py-2 max-h-40 overflow-y-auto">
-                                    <div v-for="(item, index) in outTokens" :key="index" @click="selectOutput(item)"
-                                        class="flex items-center px-4 py-2 max-h-36 overflow-y-auto hover:bg-gray-200 dark:hover:bg-[#232333] cursor-pointer">
-                                        <img class="w-7 h-7 rounded-full mr-2" :src="item.coinImageUrl" />
+                                    <div
+                                        v-for="(item, index) in outTokens"
+                                        :key="index"
+                                        @click="selectOutput(item)"
+                                        class="flex items-center px-4 py-2 max-h-36 overflow-y-auto hover:bg-gray-200 dark:hover:bg-[#232333] cursor-pointer"
+                                    >
+                                        <img
+                                            class="w-7 h-7 rounded-full mr-2"
+                                            :src="item.coinImageUrl"
+                                        />
                                         <div class="flex-1 text-sm">
                                             {{ item.symbol }}
                                         </div>
-                                        <div class="text-sm font-semibold text-gray-600">
+                                        <div
+                                            class="text-sm font-semibold text-gray-600"
+                                        >
                                             {{
                                                 showBalance(
                                                     item.ibcDenom || item.denom,
@@ -788,12 +875,16 @@ function fetchTx(tx: string) {
                                 </div>
                             </div>
                         </div>
-                        <div class="flex-1 w-0 text-xl text-right font-semibold text-gray-600 dark:text-gray-50 pr-4">
+                        <div
+                            class="flex-1 w-0 text-xl text-right font-semibold text-gray-600 dark:text-gray-50 pr-4"
+                        >
                             {{ `≈ ${parseFloat(outAmount.toFixed(6))}` }}
                         </div>
                     </div>
 
-                    <div class="flex items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg">
+                    <div
+                        class="flex items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg"
+                    >
                         <div class="mr-3 text-sm dark:text-gray-400">
                             Balance:
                         </div>
@@ -805,16 +896,24 @@ function fetchTx(tx: string) {
                                 )
                             }}
                         </div>
-                        <Icon v-if="withdrawable" icon="mdi:minus-box-outline" class="ml-2 cursor-pointer"
-                            @click="switchView('withdraw')" />
+                        <Icon
+                            v-if="withdrawable"
+                            icon="mdi:minus-box-outline"
+                            class="ml-2 cursor-pointer"
+                            @click="switchView('withdraw')"
+                        />
                     </div>
 
                     <div class="px-4 mt-4">
                         <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <div
+                                class="text-sm text-gray-600 dark:text-gray-400"
+                            >
                                 Swap Fee
                             </div>
-                            <div class="text-base text-gray-800 dark:text-gray-200">
+                            <div
+                                class="text-base text-gray-800 dark:text-gray-200"
+                            >
                                 {{
                                     decimal2percent(pool?.pool_params.swap_fee)
                                 }}%
@@ -827,9 +926,15 @@ function fetchTx(tx: string) {
                     </div>
 
                     <div class="mt-5">
-                        <button class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
-                            :disabled="disabled" @click="doSwap">
-                            <span v-if="sending" class="loading loading-spinner"></span>
+                        <button
+                            class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
+                            :disabled="disabled"
+                            @click="doSwap"
+                        >
+                            <span
+                                v-if="sending"
+                                class="loading loading-spinner"
+                            ></span>
                             Convert
                         </button>
                     </div>
@@ -837,34 +942,56 @@ function fetchTx(tx: string) {
                 <!-- deposit -->
                 <div v-show="view === 'deposit'">
                     <h3 class="text-xl font-semibold flex">
-                        <Icon class="mt-1" icon="mdi:chevron-left" @click="switchView('swap')"></Icon>
+                        <Icon
+                            class="mt-1"
+                            icon="mdi:chevron-left"
+                            @click="switchView('swap')"
+                        ></Icon>
                         Deposit
                     </h3>
 
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">Deposit assets into Osmosis:</span>
+                            <span class="label-text"
+                                >Deposit assets into Osmosis:</span
+                            >
                             <span class="lable-text">{{
                                 showBalance(swapIn?.ibcDenom, swapIn?.decimals)
                             }}</span>
                         </label>
-                        <input :value="osmoAddress(sender.cosmosAddress)" readonly type="text"
-                            class="input border border-gray-300 dark:border-gray-600" />
+                        <input
+                            :value="osmoAddress(sender.cosmosAddress)"
+                            readonly
+                            type="text"
+                            class="input border border-gray-300 dark:border-gray-600"
+                        />
                     </div>
                     <div
-                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4">
-                        <label tabindex="0" class="flex items-center h-12 px-4 cursor-pointer">
-                            <img :src="swapIn?.coinImageUrl" class="w-8 h-8 mr-3 rounded-full" />
+                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4"
+                    >
+                        <label
+                            tabindex="0"
+                            class="flex items-center h-12 px-4 cursor-pointer"
+                        >
+                            <img
+                                :src="swapIn?.coinImageUrl"
+                                class="w-8 h-8 mr-3 rounded-full"
+                            />
                             <div class="text-lg font-semibold mr-2">
                                 {{ swapIn?.symbol }}
                             </div>
                         </label>
-                        <input v-model="depositAmount" type="number" placeholder="1"
-                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold" />
+                        <input
+                            v-model="depositAmount"
+                            type="number"
+                            placeholder="1"
+                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold"
+                        />
                     </div>
 
                     <div
-                        class="flex flex-row-reverse items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg">
+                        class="flex flex-row-reverse items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg"
+                    >
                         <div class="text-base font-semibold">
                             {{
                                 showLocalBalance(
@@ -882,21 +1009,40 @@ function fetchTx(tx: string) {
 
                     <div class="mt-5 flex">
                         <label class="btn mr-1" @click="switchView('swap')">
-                            <svg fill="#ffffff" height="20px" width="20px" version="1.1" id="Layer_1"
-                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                                viewBox="0 0 330 330" xml:space="preserve">
+                            <svg
+                                fill="#ffffff"
+                                height="20px"
+                                width="20px"
+                                version="1.1"
+                                id="Layer_1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                viewBox="0 0 330 330"
+                                xml:space="preserve"
+                            >
                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g
+                                    id="SVGRepo_tracerCarrier"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                ></g>
                                 <g id="SVGRepo_iconCarrier">
-                                    <path id="XMLID_6_"
-                                        d="M165,0C74.019,0,0,74.019,0,165s74.019,165,165,165s165-74.019,165-165S255.981,0,165,0z M205.606,234.394 c5.858,5.857,5.858,15.355,0,21.213C202.678,258.535,198.839,260,195,260s-7.678-1.464-10.606-4.394l-80-79.998 c-2.813-2.813-4.394-6.628-4.394-10.606c0-3.978,1.58-7.794,4.394-10.607l80-80.002c5.857-5.858,15.355-5.858,21.213,0 c5.858,5.857,5.858,15.355,0,21.213l-69.393,69.396L205.606,234.394z">
-                                    </path>
+                                    <path
+                                        id="XMLID_6_"
+                                        d="M165,0C74.019,0,0,74.019,0,165s74.019,165,165,165s165-74.019,165-165S255.981,0,165,0z M205.606,234.394 c5.858,5.857,5.858,15.355,0,21.213C202.678,258.535,198.839,260,195,260s-7.678-1.464-10.606-4.394l-80-79.998 c-2.813-2.813-4.394-6.628-4.394-10.606c0-3.978,1.58-7.794,4.394-10.607l80-80.002c5.857-5.858,15.355-5.858,21.213,0 c5.858,5.857,5.858,15.355,0,21.213l-69.393,69.396L205.606,234.394z"
+                                    ></path>
                                 </g>
                             </svg>
                         </label>
-                        <button class="btn btn-primary grow ping-connect-confirm capitalize text-base"
-                            :disabled="disableDeposit" @click="doDeposit">
-                            <span v-if="sending" class="loading loading-spinner"></span>
+                        <button
+                            class="btn btn-primary grow ping-connect-confirm capitalize text-base"
+                            :disabled="disableDeposit"
+                            @click="doDeposit"
+                        >
+                            <span
+                                v-if="sending"
+                                class="loading loading-spinner"
+                            ></span>
                             Deposit
                         </button>
                     </div>
@@ -905,12 +1051,17 @@ function fetchTx(tx: string) {
                 <!-- withdraw -->
                 <div v-show="view === 'withdraw'">
                     <h3 class="text-xl font-semibold flex">
-                        <Icon class="mt-1" icon="mdi:chevron-left" @click="switchView('swap')"></Icon>
+                        <Icon
+                            class="mt-1"
+                            icon="mdi:chevron-left"
+                            @click="switchView('swap')"
+                        ></Icon>
                         Withdraw
                     </h3>
 
                     <div
-                        class="flex justify-between j items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-tl-lg rounded-tr-lg mt-4">
+                        class="flex justify-between j items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-tl-lg rounded-tr-lg mt-4"
+                    >
                         <div class="text-sm">Withdrawable Balance:</div>
                         <div class="text-base font-semibold">
                             {{
@@ -921,21 +1072,35 @@ function fetchTx(tx: string) {
                             }}
                         </div>
                     </div>
-                    <div class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-bl-lg rounded-br-lg">
-                        <label tabindex="0" class="flex items-center h-12 px-4 cursor-pointer">
-                            <img :src="swapOut?.coinImageUrl" class="w-8 h-8 mr-3 rounded-full" />
+                    <div
+                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-bl-lg rounded-br-lg"
+                    >
+                        <label
+                            tabindex="0"
+                            class="flex items-center h-12 px-4 cursor-pointer"
+                        >
+                            <img
+                                :src="swapOut?.coinImageUrl"
+                                class="w-8 h-8 mr-3 rounded-full"
+                            />
                             <div class="text-lg font-semibold mr-2">
                                 {{ swapOut?.symbol }}
                             </div>
                         </label>
-                        <input v-model="withdrawAmount" type="number" placeholder="1"
-                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold" />
+                        <input
+                            v-model="withdrawAmount"
+                            type="number"
+                            placeholder="1"
+                            class="input bg-transparent flex-1 h-14 text-right text-lg font-bold"
+                        />
                     </div>
 
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">Recipient on
-                                {{ localChainInfo.pretty_name }}</span>
+                            <span class="label-text"
+                                >Recipient on
+                                {{ localChainInfo.pretty_name }}</span
+                            >
                             <span class="lable-text">{{
                                 showLocalBalance(
                                     swapOut?.denom,
@@ -943,7 +1108,11 @@ function fetchTx(tx: string) {
                                 )
                             }}</span>
                         </label>
-                        <input v-model="recipient" type="text" class="input border border-gray-300 dark:border-gray-600" />
+                        <input
+                            v-model="recipient"
+                            type="text"
+                            class="input border border-gray-300 dark:border-gray-600"
+                        />
                     </div>
                     <div v-if="error" class="text-error mt-3">
                         <span>{{ error }}.</span>
@@ -951,21 +1120,40 @@ function fetchTx(tx: string) {
 
                     <div class="mt-5 flex">
                         <label class="btn mr-1" @click="switchView('swap')">
-                            <svg fill="#ffffff" height="20px" width="20px" version="1.1" id="Layer_1"
-                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                                viewBox="0 0 330 330" xml:space="preserve">
+                            <svg
+                                fill="#ffffff"
+                                height="20px"
+                                width="20px"
+                                version="1.1"
+                                id="Layer_1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                                viewBox="0 0 330 330"
+                                xml:space="preserve"
+                            >
                                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g
+                                    id="SVGRepo_tracerCarrier"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                ></g>
                                 <g id="SVGRepo_iconCarrier">
-                                    <path id="XMLID_6_"
-                                        d="M165,0C74.019,0,0,74.019,0,165s74.019,165,165,165s165-74.019,165-165S255.981,0,165,0z M205.606,234.394 c5.858,5.857,5.858,15.355,0,21.213C202.678,258.535,198.839,260,195,260s-7.678-1.464-10.606-4.394l-80-79.998 c-2.813-2.813-4.394-6.628-4.394-10.606c0-3.978,1.58-7.794,4.394-10.607l80-80.002c5.857-5.858,15.355-5.858,21.213,0 c5.858,5.857,5.858,15.355,0,21.213l-69.393,69.396L205.606,234.394z">
-                                    </path>
+                                    <path
+                                        id="XMLID_6_"
+                                        d="M165,0C74.019,0,0,74.019,0,165s74.019,165,165,165s165-74.019,165-165S255.981,0,165,0z M205.606,234.394 c5.858,5.857,5.858,15.355,0,21.213C202.678,258.535,198.839,260,195,260s-7.678-1.464-10.606-4.394l-80-79.998 c-2.813-2.813-4.394-6.628-4.394-10.606c0-3.978,1.58-7.794,4.394-10.607l80-80.002c5.857-5.858,15.355-5.858,21.213,0 c5.858,5.857,5.858,15.355,0,21.213l-69.393,69.396L205.606,234.394z"
+                                    ></path>
                                 </g>
                             </svg>
                         </label>
-                        <button class="btn btn-primary grow ping-connect-confirm capitalize text-base"
-                            :disabled="disableWithdraw" @click="doWithdraw()">
-                            <span v-if="sending" class="loading loading-spinner"></span>
+                        <button
+                            class="btn btn-primary grow ping-connect-confirm capitalize text-base"
+                            :disabled="disableWithdraw"
+                            @click="doWithdraw()"
+                        >
+                            <span
+                                v-if="sending"
+                                class="loading loading-spinner"
+                            ></span>
                             Withdraw
                         </button>
                     </div>
@@ -985,8 +1173,14 @@ function fetchTx(tx: string) {
                     </div>
 
                     <div class="mt-5">
-                        <button class="btn btn-primary w-full ping-connect-confirm capitalize text-base" @click="connect()">
-                            <span v-if="sending" class="loading loading-spinner"></span>
+                        <button
+                            class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
+                            @click="connect()"
+                        >
+                            <span
+                                v-if="sending"
+                                class="loading loading-spinner"
+                            ></span>
                             Connect
                         </button>
                     </div>
@@ -997,35 +1191,47 @@ function fetchTx(tx: string) {
                         <div v-if="error" class="my-5 text-center text-red-500">
                             {{ error }}
                         </div>
-                        <div v-else class="my-5 text-center text-lg text-green-500">
+                        <div
+                            v-else
+                            class="my-5 text-center text-lg text-green-500"
+                        >
                             {{ msg }}
                         </div>
-                        <div class="overflow-hidden h-5 mb-2 text-xs flex rounded bg-green-100">
-                            <div :style="`width: ${step}%`"
-                                class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-400">
-                            </div>
+                        <div
+                            class="overflow-hidden h-5 mb-2 text-xs flex rounded bg-green-100"
+                        >
+                            <div
+                                :style="`width: ${step}%`"
+                                class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-400"
+                            ></div>
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
                                 <span
-                                    class="text-xs font-semibold inline-block py-1 px-2 rounded text-gray-600 dark:text-white">
+                                    class="text-xs font-semibold inline-block py-1 px-2 rounded text-gray-600 dark:text-white"
+                                >
                                     Submitted
-                            </span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-semibold inline-block text-gray-600 dark:text-white">
-                                {{ step }}%
-                            </span>
+                                </span>
+                            </div>
+                            <div class="text-right">
+                                <span
+                                    class="text-xs font-semibold inline-block text-gray-600 dark:text-white"
+                                >
+                                    {{ step }}%
+                                </span>
+                            </div>
                         </div>
                     </div>
+                    <div class="mb-0 text-center">
+                        <label class="btn btn-link" @click="view = 'swap'"
+                            >Continue</label
+                        >
+                    </div>
                 </div>
-                <div class="mb-0 text-center">
-                    <label class="btn btn-link" @click="view = 'swap'">Continue</label>
-                </div>
-            </div>
+            </label>
         </label>
-    </label>
-</div></template>
+    </div>
+</template>
 <script lang="ts">
 export default {
     name: 'TokenConvert',
