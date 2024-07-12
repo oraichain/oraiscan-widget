@@ -1,4 +1,3 @@
-import './main.css';
 import { createApp, h } from 'vue';
 // @ts-ignore
 import wrapper from 'vue3-webcomponent-wrapper';
@@ -14,9 +13,11 @@ function registry(name: string, module: any) {
     }
 }
 
-registry('ping-tx-dialog', TxDialog)
-registry('ping-connect-wallet', ConnectWallet)
-registry('ping-token-convert', TokenConvert)
+registry('ping-tx-dialog', TxDialog);
+registry('ping-connect-wallet', ConnectWallet);
+registry('ping-token-convert', TokenConvert);
+
+// import './main.css';
 
 export default {
     version: '0.0.5',

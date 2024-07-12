@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-    prefix: 'oraiscan-widget',
+    prefix: 'ow-',
     darkMode: ['class'],
     content: [
         './index.html',
