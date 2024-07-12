@@ -1,13 +1,16 @@
 {
     "name": "@oraichain/oraiscan-widget",
     "private": false,
-    "version": "0.2.12",
+    "version": "0.2.12-1",
     "type": "module",
     "main": "dist/ping-widget.js",
     "author": {
         "name": "Alisa | Side Protocol",
         "email": "alisa@side.one"
     },
+    "files": [
+        "dist/"
+    ],
     "homepage": "https://github.com/oraichain/oraiscan-widget",
     "repository": {
         "type": "git",
