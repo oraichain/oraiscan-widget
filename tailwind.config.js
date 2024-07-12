@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-    prefix: 'ow-',
+    // prefix: 'ow-',
     darkMode: ['class'],
     content: [
         './index.html',

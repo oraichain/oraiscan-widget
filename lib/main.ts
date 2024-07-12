@@ -17,7 +17,7 @@ registry('ping-tx-dialog', TxDialog);
 registry('ping-connect-wallet', ConnectWallet);
 registry('ping-token-convert', TokenConvert);
 
-// import './main.css';
+import './main.css';
 
 export default {
     version: '0.0.5',
