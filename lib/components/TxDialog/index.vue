@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { sha256 } from '@cosmjs/crypto';
-import { toAscii, fromAscii, toBase64 } from '@cosmjs/encoding';
+import { toAscii, fromAscii, toHex } from '@cosmjs/encoding';
 import { ref, computed } from 'vue';
 import {
     getAccount,
@@ -247,7 +247,8 @@ async function sendTx() {
         const response = await client.broadcastTx(props.endpoint, txRaw);
         if (!response) return;
         // show submitting view
-        hash.value = toBase64(response.hash);
+        hash.value = toHex(response.hash);
+
         showResult(hash.value);
 
         emit('submited', {
@@ -294,6 +295,7 @@ function fetchTx(tx: string) {
     step.value += 20;
     getTxByHash(props.endpoint, tx)
         .then((res) => {
+            console.log("res: ", res)
             step.value = 100;
             if (res.txResponse!.code > 0) {
                 error.value = res.txResponse?.rawLog ?? '';
