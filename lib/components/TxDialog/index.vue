@@ -249,10 +249,6 @@ async function sendTx() {
         // show submitting view
         hash.value = toHex(response.hash);
 
-        console.log("tx hex here: ", hash.value)
-        console.log("endpoint: ", props.endpoint)
-        console.log("chain id: ", chainId.value)
-
         showResult(hash.value);
 
         emit('submited', {
