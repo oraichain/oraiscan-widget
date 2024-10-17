@@ -58,7 +58,7 @@ const isValid = computed(() => {
         ok = false;
         error = 'Sender is empty';
     }
-    if (!params.value.validatorAddress) {
+    if (!params.value.validator_address) {
         ok = false;
         error = 'Validator is empty';
     }
