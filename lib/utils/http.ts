@@ -167,6 +167,25 @@ export async function getBalanceMetadata(
 ): Promise<{ metadata: Metadata }> {
     // const url = `${endpoint}/cosmos/bank/v1beta1/denoms_metadata/${denom}`;
     // return get(url);
+    if (denom === 'orai')
+        return {
+            metadata: {
+                description: 'The native token of Osmosis',
+                denomUnits: [
+                    {
+                        denom: 'orai',
+                        exponent: 6,
+                        aliases: [],
+                    },
+                ],
+                base: 'orai',
+                display: 'orai',
+                name: '',
+                symbol: '',
+                uri: '',
+                uriHash: '',
+            },
+        };
     const queryClient = createQueryClient(endpoint);
     const res = await queryClient.bank.denomMetadata(denom);
     return { metadata: res };

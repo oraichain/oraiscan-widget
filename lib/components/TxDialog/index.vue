@@ -111,7 +111,7 @@ async function initData() {
         metadatas.value = {};
         view.value = 'input';
         p.value = JSON.parse(props.params || '{}');
-        memo.value = props.type?.toLowerCase() === 'send' ? '' : 'ping.pub';
+        memo.value = props.type?.toLowerCase() === 'send' ? '' : 'Oraichain';
 
         feeAmount.value = Number(p.value?.fees?.amount || 2000);
         try {
