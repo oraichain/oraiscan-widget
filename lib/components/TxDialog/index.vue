@@ -111,7 +111,7 @@ async function initData() {
         metadatas.value = {};
         view.value = 'input';
         p.value = JSON.parse(props.params || '{}');
-        memo.value = props.type?.toLowerCase() === 'send' ? '' : 'Oraichain';
+        memo.value = props.type?.toLowerCase() === 'send' ? '' : 'scanium.io';
 
         feeAmount.value = Number(p.value?.fees?.amount || 2000);
         try {
@@ -316,26 +316,12 @@ function fetchTx(tx: string) {
 <template>
     <div class="text-gray-600">
         <!-- Put this part before </body> tag -->
-        <input
-            v-model="open"
-            type="checkbox"
-            :id="type"
-            class="modal-toggle"
-            @change="initData()"
-        />
+        <input v-model="open" type="checkbox" :id="type" class="modal-toggle" @change="initData()" />
         <label :for="type" class="modal cursor-pointer">
-            <label
-                class="modal-box relative p-5"
-                :class="{
+            <label class="modal-box relative p-5" :class="{
                     '!w-11/12 !max-w-5xl': String(type).startsWith('wasm'),
-                }"
-                for=""
-            >
-                <label
-                    :for="type"
-                    class="btn btn-sm btn-circle absolute right-4 top-4"
-                    >✕</label
-                >
+                }" for="">
+                <label :for="type" class="btn btn-sm btn-circle absolute right-4 top-4">✕</label>
                 <h3 class="text-lg font-bold capitalize dark:text-gray-300">
                     {{ showTitle() }}
                 </h3>
@@ -346,34 +332,19 @@ function fetchTx(tx: string) {
 
                 <div v-if="sender">
                     <div v-if="view === 'input'">
-                        <component
-                            :is="msgType"
-                            ref="msgBox"
-                            :endpoint="endpoint"
-                            :sender="sender"
-                            :balances="balance"
-                            :metadata="metadatas"
-                            :params="props.params"
-                        />
+                        <component :is="msgType" ref="msgBox" :endpoint="endpoint" :sender="sender" :balances="balance"
+                            :metadata="metadatas" :params="props.params" />
                         <form class="space-y-6" action="#" method="POST">
                             <div :class="advance ? '' : 'hidden'">
                                 <div class="form-control">
                                     <label class="label">
                                         <span class="label-text">Fees</span>
                                     </label>
-                                    <label
-                                        class="input-group flex items-center"
-                                    >
-                                        <input
-                                            v-model="feeAmount"
-                                            type="text"
-                                            placeholder="0.001"
-                                            class="input border border-gray-300 dark:border-gray-600 flex-1 w-0 dark:text-gray-300"
-                                        />
-                                        <select
-                                            v-model="feeDenom"
-                                            class="select input border border-gray-300 dark:border-gray-600 w-[200px]"
-                                        >
+                                    <label class="input-group flex items-center">
+                                        <input v-model="feeAmount" type="text" placeholder="0.001"
+                                            class="input border border-gray-300 dark:border-gray-600 flex-1 w-0 dark:text-gray-300" />
+                                        <select v-model="feeDenom"
+                                            class="select input border border-gray-300 dark:border-gray-600 w-[200px]">
                                             <option disabled selected>
                                                 Select Fee Token
                                             </option>
@@ -387,74 +358,38 @@ function fetchTx(tx: string) {
                                     <label class="label">
                                         <span class="label-text">Gas</span>
                                     </label>
-                                    <input
-                                        v-model="gasInfo"
-                                        type="number"
-                                        placeholder="2000000"
-                                        class="input border border-gray-300 dark:border-gray-600 dark:text-gray-300"
-                                    />
+                                    <input v-model="gasInfo" type="number" placeholder="2000000"
+                                        class="input border border-gray-300 dark:border-gray-600 dark:text-gray-300" />
                                 </div>
                                 <div class="form-control">
                                     <label class="label">
                                         <span class="label-text">Memo</span>
                                     </label>
-                                    <input
-                                        v-model="memo"
-                                        type="text"
-                                        placeholder="Memo"
-                                        class="input border border-gray-300 dark:border-gray-600 dark:text-gray-300"
-                                    />
+                                    <input v-model="memo" type="text" placeholder="Memo"
+                                        class="input border border-gray-300 dark:border-gray-600 dark:text-gray-300" />
                                 </div>
                             </div>
                         </form>
 
-                        <div
-                            v-show="error"
-                            class="mt-5 alert alert-error shadow-lg"
-                            @click="error = ''"
-                        >
+                        <div v-show="error" class="mt-5 alert alert-error shadow-lg" @click="error = ''">
                             <div class="flex">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="stroke-current flex-shrink-0 h-6 w-6"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>{{ error }}.</span>
                             </div>
                         </div>
 
-                        <div
-                            class="modal-action flex justify-between items-center"
-                        >
+                        <div class="modal-action flex justify-between items-center">
                             <div class="flex items-center cursor-pointer">
-                                <input
-                                    v-model="advance"
-                                    type="checkbox"
-                                    :id="`${type}-advance`"
-                                    class="checkbox checkbox-sm checkbox-primary mr-2"
-                                /><label
-                                    :for="`${type}-advance`"
-                                    class="cursor-pointer dark:text-gray-400"
-                                    >Advance</label
-                                >
+                                <input v-model="advance" type="checkbox" :id="`${type}-advance`"
+                                    class="checkbox checkbox-sm checkbox-primary mr-2" /><label :for="`${type}-advance`"
+                                    class="cursor-pointer dark:text-gray-400">Advance</label>
                             </div>
-                            <button
-                                class="btn btn-primary"
-                                @click="sendTx()"
-                                :disabled="sending"
-                            >
-                                <span
-                                    v-if="sending"
-                                    class="loading loading-spinner"
-                                ></span>
+                            <button class="btn btn-primary" @click="sendTx()" :disabled="sending">
+                                <span v-if="sending" class="loading loading-spinner"></span>
                                 Send
                             </button>
                         </div>
@@ -462,48 +397,33 @@ function fetchTx(tx: string) {
 
                     <div v-if="view === 'submitting'">
                         <div class="my-10">
-                            <div
-                                v-if="error"
-                                class="my-5 text-center text-red-500"
-                            >
+                            <div v-if="error" class="my-5 text-center text-red-500">
                                 {{ error }}
                             </div>
-                            <div
-                                v-else
-                                class="my-5 text-center text-lg text-green-500"
-                            >
+                            <div v-else class="my-5 text-center text-lg text-green-500">
                                 {{ msg }}
                             </div>
-                            <div
-                                class="overflow-hidden h-5 mb-2 text-xs flex rounded bg-green-100"
-                            >
-                                <div
-                                    :style="`width: ${step}%`"
-                                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-400"
-                                ></div>
+                            <div class="overflow-hidden h-5 mb-2 text-xs flex rounded bg-green-100">
+                                <div :style="`width: ${step}%`"
+                                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-400">
+                                </div>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div>
                                     <span
-                                        class="text-xs font-semibold inline-block py-1 px-2 rounded text-gray-600 dark:text-white"
-                                    >
+                                        class="text-xs font-semibold inline-block py-1 px-2 rounded text-gray-600 dark:text-white">
                                         Submitted
                                     </span>
                                 </div>
                                 <div class="text-right">
-                                    <span
-                                        class="text-xs font-semibold inline-block text-gray-600 dark:text-white"
-                                    >
+                                    <span class="text-xs font-semibold inline-block text-gray-600 dark:text-white">
                                         {{ step }}%
                                     </span>
                                 </div>
                             </div>
                         </div>
-                        <label
-                            class="mt-10 flex justify-center text-sm"
-                            @click="viewTransaction"
-                        >
-                            <span>View Transaction</span>
+                        <label class="mt-10 flex justify-center text-sm btn" @click="viewTransaction">
+                            <span class="text-white">View Transaction</span>
                         </label>
                     </div>
                 </div>
