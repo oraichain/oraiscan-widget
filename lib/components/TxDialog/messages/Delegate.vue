@@ -130,28 +130,22 @@ defineExpose({ msgs, isValid, initial });
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input
-                :value="sender"
-                type="text"
-                class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600"
-            />
+            <input :value="sender" type="text"
+                class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Validator</span>
-                <a class="label-text" @click="loadInactiveValidators()"
-                    >Show Inactive</a
-                >
+                <a class="label-text" @click="loadInactiveValidators()">Show Inactive</a>
             </label>
-            <select v-model="validator" class="select select-bordered">
+            <select v-model="validator" class="select select-bordered text-white">
                 <option value="">Select a validator</option>
                 <option v-for="v in list" :value="v.operatorAddress">
-                    {{ v.description.moniker }} ({{
-                        decimal2percent(v.commission.commissionRates.rate)
+                    {{ v.description.moniker }}
+                    ({{
+                    Number(decimal2percent(v.commission.commissionRates.rate)) / 1e18
                     }}%)
-                    <span v-if="v.status !== BondStatus.BOND_STATUS_BONDED"
-                        >x</span
-                    >
+                    <span v-if="v.status !== BondStatus.BOND_STATUS_BONDED">x</span>
                 </option>
             </select>
         </div>
@@ -164,17 +158,15 @@ defineExpose({ msgs, isValid, initial });
                 </span>
             </label>
             <label class="join">
-                <input
-                    v-model="amount"
-                    type="number"
-                    :placeholder="`Available: ${available?.display.amount}`"
-                    class="input border border-gray-300 dark:border-gray-600 w-full join-item"
-                />
-                <select
-                    v-model="amountDenom"
-                    class="select select-bordered join-item"
-                >
-                    <option v-for="u in units">{{ u.denom }}</option>
+                <div class="w-full relative flex justify-center items-center">
+                    <input v-model="amount" type="number" :placeholder="`Available: ${available?.display.amount}`"
+                        class="input border border-gray-300 dark:border-gray-600 w-full join-item text-white" />
+                    <button
+                        class="absolute right-2 p-1 z-10 bg-[rgb(46,46,51)] text-white hover:bg-[hsl(222,6%,43%)] text-sm"
+                        @click="amount = available?.display.amount">Max</button>
+                </div>
+                <select v-model="amountDenom" class="select select-bordered join-item text-white">
+                    <option v-for="u in units" class="text-white">{{ u.denom }}</option>
                 </select>
             </label>
         </div>

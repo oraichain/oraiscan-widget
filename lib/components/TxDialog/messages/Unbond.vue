@@ -106,15 +106,16 @@ defineExpose({ msgs, isValid, initial });
             <label class="label">
                 <span class="label-text">Amount</span>
             </label>
-            <label class="input-group">
-                <input
-                    v-model="amount"
-                    type="number"
-                    :placeholder="`Avaiable: ${available.display?.amount}`"
-                    class="input border border-gray-300 dark:border-gray-600 w-full"
-                />
-                <select v-model="amountDenom" class="select select-bordered">
-                    <option v-for="u in units">{{ u.denom }}</option>
+            <label class="join">
+                <div class="w-full relative flex justify-center items-center">
+                    <input v-model="amount" type="number" :placeholder="`Available: ${available?.display.amount}`"
+                        class="input border border-gray-300 dark:border-gray-600 w-full join-item text-white" />
+                    <button
+                        class="absolute right-2 p-1 z-10 bg-[rgb(46,46,51)] text-white hover:bg-[hsl(222,6%,43%)] text-sm"
+                        @click="amount = available?.display.amount">Max</button>
+                </div>
+                <select v-model="amountDenom" class="select select-bordered join-item text-white">
+                    <option v-for="u in units" class="text-white">{{ u.denom }}</option>
                 </select>
             </label>
         </div>
