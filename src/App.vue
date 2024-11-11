@@ -133,11 +133,7 @@ console.log(ethermintToEth("evmos13zl7c4ea60jt05hxhl2dp443r7zrlz4plc5m8z"))
         </div>
 
         <div>&nbsp;</div>
-        <ping-connect-wallet
-            :chain-id="conf.chainId"
-            :hd-path="conf.hdPath"
-            @change="walletStateChange"
-        />
+        <ping-connect-wallet :chain-id="conf.chainId" :hd-path="conf.hdPath" @change="walletStateChange" />
 
         <textarea v-model="conf.params" cols="80" rows="5"></textarea>
         <div></div>
@@ -149,42 +145,25 @@ console.log(ethermintToEth("evmos13zl7c4ea60jt05hxhl2dp443r7zrlz4plc5m8z"))
         <br />
 
         <label :for="toOpen" class="btn">{{ toOpen }}</label>
-        <ping-tx-dialog
-            :type="toOpen"
-            :sender="conf.sender"
-            :registry-name="conf.chainName"
-            :endpoint="conf.endpoint"
-            :hd-path="conf.hdPath"
-            :params="conf.params"
-        ></ping-tx-dialog>
+        <ping-tx-dialog :type="toOpen" :sender="conf.sender" :registry-name="conf.chainName" :endpoint="conf.endpoint"
+            :hd-path="conf.hdPath" :params="conf.params"></ping-tx-dialog>
 
         <br />
         // example:<br />
         <label for="withdraw" class="btn">Withdraw</label>
-        <ping-tx-dialog
-            type="withdraw"
-            :sender="conf.sender"
-            :endpoint="conf.endpoint"
-            :hd-path="conf.hdPath"
-            :params="conf.params"
-        ></ping-tx-dialog>
+        <ping-tx-dialog type="withdraw" :sender="conf.sender" :endpoint="conf.endpoint" :hd-path="conf.hdPath"
+            :params="conf.params"></ping-tx-dialog>
 
         <label for="store_code" class="btn">Store Code</label>
-        <ping-tx-dialog
-            type="store_code"
-            :sender="conf.sender"
-            :endpoint="conf.endpoint"
-            :registry-name="conf.chainName"
-            :hd-path="conf.hdPath"
-            :params="conf.params"
-        ></ping-tx-dialog>
+        <ping-tx-dialog type="store_code" :sender="conf.sender" :endpoint="conf.endpoint"
+            :registry-name="conf.chainName" :hd-path="conf.hdPath" :params="conf.params"></ping-tx-dialog>
 
         <label for="PingTokenConvert" class="btn">Token Convert</label>
-        <ping-token-convert
-            :chain-name="conf.chainName"
-            :endpoint="conf.endpoint"
-            hd-path="m/44'/118/0'/0/0"
-        ></ping-token-convert>
+        <ping-token-convert :chain-name="conf.chainName" :endpoint="conf.endpoint"
+            hd-path="m/44'/118/0'/0/0"></ping-token-convert>
+
+        <label for="CreateProposal" class="btn">Create Proposal</label>
+        <ping-create-proposal :sender="conf.sender"></ping-create-proposal>
     </div>
 </template>
 
