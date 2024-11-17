@@ -163,7 +163,7 @@ console.log(ethermintToEth("evmos13zl7c4ea60jt05hxhl2dp443r7zrlz4plc5m8z"))
             hd-path="m/44'/118/0'/0/0"></ping-token-convert>
 
         <label for="CreateProposal" class="btn">Create Proposal</label>
-        <ping-create-proposal :sender="conf.sender"></ping-create-proposal>
+        <ping-create-proposal :sender="'orai1zhmkqz936xupt34rq3scrg5j7tv6recq04d44t'" :denom="'orai'" :chain-id="'Oraichain-fork'" :url-rpc="'http://134.209.164.196:20057'"></ping-create-proposal>
     </div>
 </template>
 
