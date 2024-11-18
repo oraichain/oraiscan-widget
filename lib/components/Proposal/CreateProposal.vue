@@ -225,13 +225,13 @@ async function handleCreateProposal(e: Event) {
                 <form class="flex gap-5 flex-col" :onsubmit="handleCreateProposal" method="get" v-if="sender">
                     <h1>Create Proposal</h1>
                     <select v-model="typeState"
-                        class="h-10 w-1/2 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer">
+                        class="h-10 w-1/2 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer text-white">
                         <option v-for="i in typesProposal" :value="i.value">{{ i.label }}</option>
                     </select>
                     <div class="flex flex-col gap-2">
                         <h2>Title</h2>
                         <input v-model="formData.title"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter title proposal" required />
                     </div>
                     <div class="flex flex-col gap-2">
@@ -242,7 +242,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2">
                         <h2>Deposit Amount ({{ denom }})</h2>
                         <input v-model="formData.amount"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter deposit amount" type="number" :step="0.00000001" min="0" required>
                     </div>
 
@@ -250,7 +250,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === UNBONDING_TIME">
                         <h2>Unbonding time</h2>
                         <input v-model="formData.unbondingTime"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter unbonding time" type="number" required>
                     </div>
 
@@ -259,13 +259,13 @@ async function handleCreateProposal(e: Event) {
                         <h2>Voting Period</h2>
                         <div class="flex gap-2">
                             <select v-model="votingType"
-                                class="h-10 w-1/3 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer">
+                                class="h-10 w-1/3 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer text-white">
                                 <option v-for="i in votingFields" :value="i.value">{{ i.label }}</option>
                             </select>
                             <input v-if="votingType === VOTING_DAY"
-                                class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2" type="number"
+                                class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white" type="number"
                                 min=1 v-model="formData.votingPeriodDay" required>
-                            <input v-else class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2"
+                            <input v-else class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white"
                                 v-model="formData.votingPeriodTime" type="time" step="1" required>
                         </div>
                     </div>
@@ -274,7 +274,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === COMMUNITY_TAX">
                         <h2>Community Tax (%)</h2>
                         <input v-model="formData.communityTax"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter community tax" type="number" required>
                     </div>
 
@@ -282,7 +282,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === INFLATION_MIN">
                         <h2>Minimum Inflation (%)</h2>
                         <input v-model="formData.inflationMin"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter minimum inflation" type="number" required>
                     </div>
 
@@ -290,7 +290,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === INFLATION_MAX">
                         <h2>Maximum Inflation (%)</h2>
                         <input v-model="formData.inflationMax"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter maximum inflation" type="number" required>
                     </div>
 
@@ -298,7 +298,7 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === DEPOSIT_PARAMS">
                         <h2>Minimum Deposit Amount ({{ denom }})</h2>
                         <input v-model="formData.minDeposit"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter minimum deposit amount" type="number" required>
                     </div>
 
@@ -306,14 +306,14 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === UPDATE_ADMIN_PROPOSAL">
                         <h2>New Admin</h2>
                         <input v-model="formData.newAdmin"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter new admin" type="text" required>
                     </div>
 
                     <div class="flex flex-col gap-2" v-if="typeState === UPDATE_ADMIN_PROPOSAL">
                         <h2>Contract</h2>
                         <input v-model="formData.contract"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter contract" type="text" required>
                     </div>
 
@@ -321,14 +321,14 @@ async function handleCreateProposal(e: Event) {
                     <div class="flex flex-col gap-2" v-if="typeState === COMMUNITY_POOL_SPEND_PROPOSAL">
                         <h2>Recipient</h2>
                         <input v-model="formData.recipient"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter recipient" type="text" required>
                     </div>
 
                     <div class="flex flex-col gap-2" v-if="typeState === COMMUNITY_POOL_SPEND_PROPOSAL">
                         <h2>Amount({{ denom }})</h2>
                         <input v-model="formData.receiveAmount"
-                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2"
+                            class="w-full h-10 rounded-lg border border-base-300 outline-none p-2 text-white"
                             placeholder="Enter amount" type="number" min="0" required>
                     </div>
 
@@ -358,17 +358,29 @@ async function handleCreateProposal(e: Event) {
             </label>
             <label class="modal-box bg-base-100 rounded-lg" for="" v-else>
                 <div v-if="isSuccessfully" class="flex flex-col items-center justify-center gap-5 w-full">
-                    <p class=font-bold>Create Proposal Successfully</p>
+                    <p class="font-bold text-white">Create Proposal Successfully</p>
                     <!-- <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" >View
                         Proposal</button> -->
                 </div>
                 <div v-else>
-                    <p class=font-bold>Create Proposal Failed</p>
+                    <p class="font-bold text-white">Create Proposal Failed</p>
                 </div>
             </label>
         </label>
     </div>
 </template>
+
+<style lang="css">
+.ql-toolbar.ql-snow {
+    border-radius: 10px 10px 0px 0px;
+    border: 1px solid #383B40;
+}
+
+.ql-container.ql-snow {
+    border-radius: 0px 0px 10px 10px;
+    border: 1px solid #383B40;
+}
+</style>
 
 <script lang="ts">
 export default {
