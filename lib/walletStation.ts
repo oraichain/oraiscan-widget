@@ -34,7 +34,6 @@ export default class WalletStation {
             ...createWasmAminoConverters(),
             ...createGovAminoConverters(),
         });
-        console.log({ urlRpc });
         return await cosmwasm.SigningCosmWasmClient.connectWithSigner(
             urlRpc,
             wallet,
@@ -55,9 +54,7 @@ export default class WalletStation {
     ) => {
         try {
             const wallet = await this.collectWallet(chainId);
-            console.log({ wallet });
             const client = await this.signerClient(urlRpc, wallet, denom);
-            console.log({ client });
             const result = await client.signAndBroadcast(
                 address,
                 messages,
@@ -78,7 +75,6 @@ export default class WalletStation {
         amount: any,
         changeInfo: any
     ) => {
-        console.log({ urlRpc, denom, chainId, amount });
         const initial_deposit = [{ denom, amount: amount.toString() }];
         const message = {
             typeUrl: '/cosmos.gov.v1beta1.MsgSubmitProposal',

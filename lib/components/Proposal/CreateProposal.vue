@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, toRaw } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { walletStation } from '../../walletStation';
 import { VueEditor } from "vue3-editor";
 import BigNumber from 'bignumber.js';
@@ -39,12 +39,7 @@ const votingFields = [
     },
 ];
 
-const open = ref(false);
-const typeState = ref(TEXT_PROPOSAL);
-const votingType = ref(VOTING_DAY);
-const error = ref("");
-
-const formData = reactive({
+const initData = {
     title: "",
     description: "",
     amount: 10,
@@ -59,6 +54,23 @@ const formData = reactive({
     contract: "",
     recipient: "",
     receiveAmount: 10
+}
+
+const open = ref(false);
+const typeState = ref(TEXT_PROPOSAL);
+const votingType = ref(VOTING_DAY);
+const error = ref("");
+const isCreating = ref(false);
+const isEndProcess = ref(false);
+const isSuccessfully = ref(false);
+let formData = reactive({ ...initData });
+
+watch(open, () => {
+    if (!open.value) {
+        Object.assign(formData, { ...initData });
+        isEndProcess.value = false;
+        error.value = "";
+    }
 })
 
 const hmsToMiliSeconds = times => {
@@ -144,6 +156,8 @@ const handleOptionData = data => {
 
 async function handleCreateProposal(e: Event) {
     e.preventDefault();
+    isCreating.value = true;
+    error.value = "";
     const data = { ...formData };
     const newData = handleOptionData(data);
     const { title, description, subspace, key, value, amount, newAdmin, contract, recipient, receiveAmount } = newData;
@@ -183,16 +197,20 @@ async function handleCreateProposal(e: Event) {
                 amount,
             });
         }
+        isEndProcess.value = true;
     } catch (err) {
         console.log({ err });
         error.value = err;
     }
-    
+
     if (response?.code === 0) {
+        isSuccessfully.value = true;
         console.log("Success")
     } else {
-        console.log("Failed")
+        console.log("Failed");
+        isSuccessfully.value = false;
     }
+    isCreating.value = false;
 }
 
 </script>
@@ -200,7 +218,7 @@ async function handleCreateProposal(e: Event) {
     <div>
         <input v-model="open" type="checkbox" id="CreateProposal" class="modal-toggle" />
         <label for="CreateProposal" class="modal cursor-pointer">
-            <label class="modal-box bg-base-100 rounded-lg" for="">
+            <label class="modal-box bg-base-100 rounded-lg" for="" v-if="!isEndProcess">
                 <div v-if="!sender" class="text-center h-16 items-center">
                     No wallet connected!
                 </div>
@@ -333,8 +351,20 @@ async function handleCreateProposal(e: Event) {
                     </div>
 
                     <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary"
-                        type="submit">Create</button>
+                        type="submit">
+                        <span v-if="isCreating" :class="isCreating ? 'loading loading-spinner' : ''"></span>
+                        Create</button>
                 </form>
+            </label>
+            <label class="modal-box bg-base-100 rounded-lg" for="" v-else>
+                <div v-if="isSuccessfully" class="flex flex-col items-center justify-center gap-5 w-full">
+                    <p class=font-bold>Create Proposal Successfully</p>
+                    <!-- <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" >View
+                        Proposal</button> -->
+                </div>
+                <div v-else>
+                    <p class=font-bold>Create Proposal Failed</p>
+                </div>
             </label>
         </label>
     </div>
