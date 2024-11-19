@@ -39,6 +39,8 @@ const votingFields = [
     },
 ];
 
+const emit = defineEmits(['viewTraction', 'viewProposal']);
+
 const initData = {
     title: "",
     description: "",
@@ -63,6 +65,7 @@ const error = ref("");
 const isCreating = ref(false);
 const isEndProcess = ref(false);
 const isSuccessfully = ref(false);
+const txhash = ref("");
 let formData = reactive({ ...initData });
 
 watch(open, () => {
@@ -154,7 +157,7 @@ const handleOptionData = data => {
     }
 };
 
-async function handleCreateProposal(e: Event) {
+const handleCreateProposal = async (e: Event) => {
     e.preventDefault();
     isCreating.value = true;
     error.value = "";
@@ -203,31 +206,45 @@ async function handleCreateProposal(e: Event) {
         error.value = err;
     }
 
+    txhash.value = response?.transactionHash;
+
     if (response?.code === 0) {
         isSuccessfully.value = true;
-        console.log("Success")
     } else {
-        console.log("Failed");
         isSuccessfully.value = false;
     }
     isCreating.value = false;
+}
+
+const viewTransaction = () => {
+    emit('viewTraction', { txhash: txhash.value });
+    open.value = false;
+}
+
+const viewProposal = () => {
+    open.value = false;
+    emit('viewProposal');
 }
 
 </script>
 <template>
     <div>
         <input v-model="open" type="checkbox" id="CreateProposal" class="modal-toggle" />
-        <label for="CreateProposal" class="modal cursor-pointer">
+        <label for="CreateProposal" class="modal cursor-pointer" v-if="open">
             <label class="modal-box bg-base-100 rounded-lg" for="" v-if="!isEndProcess">
                 <div v-if="!sender" class="text-center h-16 items-center">
                     No wallet connected!
                 </div>
                 <form class="flex gap-5 flex-col" :onsubmit="handleCreateProposal" method="get" v-if="sender">
-                    <h1>Create Proposal</h1>
-                    <select v-model="typeState"
+                    <h1 class="text-white text-2xl">Create Proposal</h1>
+                    <div class="flex flex-col gap-2">
+                        <h2>Type Proposal</h2>
+                        <select v-model="typeState"
                         class="h-10 w-1/2 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer text-white">
                         <option v-for="i in typesProposal" :value="i.value">{{ i.label }}</option>
                     </select>
+                    </div>
+                    
                     <div class="flex flex-col gap-2">
                         <h2>Title</h2>
                         <input v-model="formData.title"
@@ -358,12 +375,14 @@ async function handleCreateProposal(e: Event) {
             </label>
             <label class="modal-box bg-base-100 rounded-lg" for="" v-else>
                 <div v-if="isSuccessfully" class="flex flex-col items-center justify-center gap-5 w-full">
-                    <p class="font-bold text-white">Create Proposal Successfully</p>
-                    <!-- <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" >View
-                        Proposal</button> -->
+                    <p class="font-bold text-green-500">Create Proposal Successfully</p>
+                    <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" @click="viewProposal">View
+                        Proposal</button>
                 </div>
                 <div v-else>
-                    <p class="font-bold text-white">Create Proposal Failed</p>
+                    <p class="font-bold text-red-500">Create Proposal Failed</p>
+                    <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" @click="viewTransaction">View
+                        Transaction</button>
                 </div>
             </label>
         </label>
