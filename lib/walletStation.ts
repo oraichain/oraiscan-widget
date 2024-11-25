@@ -1,22 +1,27 @@
 // @ts-nocheck
-import { TextProposal } from 'cosmjs-types/cosmos/gov/v1beta1/gov';
-import { Any } from 'cosmjs-types/google/protobuf/any';
-import { createWasmAminoConverters } from '@cosmjs/cosmwasm-stargate/build/modules/wasm/aminomessages';
-import { createStakingAminoConverters } from '@cosmjs/stargate/build/modules/staking/aminomessages';
-import { createDistributionAminoConverters } from '@cosmjs/stargate/build/modules/distribution/aminomessages';
-import { createBankAminoConverters } from '@cosmjs/stargate/build/modules/bank/aminomessages';
-import { createGovAminoConverters } from '@cosmjs/stargate/build/modules/gov/aminomessages';
-import { ParameterChangeProposal } from 'cosmjs-types/cosmos/params/v1beta1/params';
-import {
-    MsgDeposit,
-    MsgSubmitProposal,
-    MsgVote,
-} from 'cosmjs-types/cosmos/gov/v1beta1/tx';
-import { UpdateAdminProposal } from 'cosmjs-types/cosmwasm/wasm/v1/proposal';
-import { CommunityPoolSpendProposal } from "cosmjs-types/cosmos/distribution/v1beta1/distribution";
-import { GasPrice, AminoTypes } from '@cosmjs/stargate';
-import * as cosmwasm from '@cosmjs/cosmwasm-stargate';
 import { Decimal } from '@cosmjs/math';
+import { coin } from '@cosmjs/amino';
+import {
+    AminoTypes,
+    GasPrice,
+    createStakingAminoConverters,
+    createDistributionAminoConverters,
+    createBankAminoConverters,
+    createGovAminoConverters,
+} from '@cosmjs/stargate';
+import { createWasmAminoConverters } from '@cosmjs/cosmwasm-stargate';
+import {
+    MsgSubmitProposal,
+    MsgExecLegacyContent,
+} from 'cosmjs-types/cosmos/gov/v1/tx';
+import { MsgUpdateAdmin } from 'cosmjs-types/cosmwasm/wasm/v1/tx';
+import { TextProposal } from 'cosmjs-types/cosmos/gov/v1beta1/gov';
+import {
+    ParameterChangeProposal,
+    ParamChange,
+} from 'cosmjs-types/cosmos/params/v1beta1/params';
+import { MsgCommunityPoolSpend } from 'cosmjs-types/cosmos/distribution/v1beta1/tx';
+import * as cosmwasm from '@cosmjs/cosmwasm-stargate';
 
 export default class WalletStation {
     constructor() {}
@@ -26,7 +31,7 @@ export default class WalletStation {
         return window.getOfflineSigner(chainId);
     };
 
-    signerClient = async (urlRpc, wallet, denom) => {
+    signerClient = async (urlRpc: string, wallet: any, denom: string) => {
         const aminoTypes = new AminoTypes({
             ...createStakingAminoConverters(),
             ...createDistributionAminoConverters(),
@@ -46,20 +51,29 @@ export default class WalletStation {
     };
 
     signAndBroadCast = async (
-        urlRpc: string,
+        chainInfo: {
+            urlRpc: string;
+            chainId: string;
+        },
         denom: string,
-        chainId: string,
-        address: any,
+        sender: string,
         messages: any
     ) => {
         try {
-            const wallet = await this.collectWallet(chainId);
-            const client = await this.signerClient(urlRpc, wallet, denom);
+            const wallet = await this.collectWallet(chainInfo?.chainId);
+            console.log({ wallet });
+            const client = await this.signerClient(
+                chainInfo?.urlRpc,
+                wallet,
+                denom
+            );
+            console.log({ client });
             const result = await client.signAndBroadcast(
-                address,
+                sender,
                 messages,
                 'auto'
             );
+            console.log({ result });
             return result;
         } catch (error) {
             console.log('signAndBroadcast msg error: ', error);
@@ -68,106 +82,216 @@ export default class WalletStation {
     };
 
     textProposal = async (
-        urlRpc: string,
-        denom: string,
-        chainId: string,
-        proposer: any,
-        amount: any,
-        changeInfo: any
+        sender: string,
+        govAddress: string,
+        changeInfo: {
+            title: string;
+            description: string;
+            denom: string;
+            amount: any;
+        },
+        chainInfo: {
+            urlRpc: string;
+            chainId: string;
+        }
     ) => {
-        const initial_deposit = [{ denom, amount: amount.toString() }];
+        const textProposalInfo = TextProposal.fromPartial({
+            title: changeInfo.title,
+            description: changeInfo.description,
+        });
+
         const message = {
-            typeUrl: '/cosmos.gov.v1beta1.MsgSubmitProposal',
-            value: {
-                content: Any.fromPartial({
-                    typeUrl: '/cosmos.gov.v1beta1.TextProposal',
-                    value: TextProposal.encode(changeInfo).finish(),
-                }),
-                proposer: proposer,
-                initialDeposit: initial_deposit,
-            },
+            typeUrl: '/cosmos.gov.v1.MsgSubmitProposal',
+            value: MsgSubmitProposal.fromPartial({
+                messages: [
+                    {
+                        typeUrl: '/cosmos.gov.v1.MsgExecLegacyContent',
+                        value: MsgExecLegacyContent.encode({
+                            authority: govAddress,
+                            content: {
+                                typeUrl: '/cosmos.gov.v1beta1.TextProposal',
+                                value: TextProposal.encode(
+                                    textProposalInfo
+                                ).finish(),
+                            },
+                        }).finish(),
+                    },
+                ],
+                initialDeposit: [coin(changeInfo.amount, changeInfo.denom)],
+                proposer: sender,
+                title: textProposalInfo.title,
+                summary: textProposalInfo.description,
+                metadata: '',
+            }),
         };
-        return this.signAndBroadCast(urlRpc, denom, chainId, proposer, [
-            message,
-        ]);
+
+        return this.signAndBroadCast(
+            chainInfo,
+            changeInfo.denom,
+            sender,
+            [message]
+        );
     };
 
     updateAdminProposal = async (
-        urlRpc,
-        denom,
-        chainId,
-        proposer,
-        amount,
-        change_info
+        sender: string,
+        govAddress: string,
+        changeInfo: {
+            contract: string;
+            description: string;
+            newAdmin: string;
+            title: string;
+            denom: string;
+            amount: any;
+        },
+        chainInfo: {
+            urlRpc: string;
+            chainId: string;
+        }
     ) => {
-        const initial_deposit = [{ denom, amount: amount.toString() }];
         const message = {
-            typeUrl: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+            typeUrl: '/cosmos.gov.v1.MsgSubmitProposal',
             value: MsgSubmitProposal.fromPartial({
-                content: Any.fromPartial({
-                    typeUrl: '/cosmwasm.wasm.v1.UpdateAdminProposal',
-                    value: UpdateAdminProposal.encode(change_info).finish(),
-                }),
-                proposer: proposer,
-                initialDeposit: initial_deposit,
-            }),
+                messages: [
+                    {
+                        typeUrl: '/cosmwasm.wasm.v1.MsgUpdateAdmin',
+                        value: MsgUpdateAdmin.encode({
+                            contract: changeInfo.contract,
+                            newAdmin: changeInfo.newAdmin,
+                            sender: govAddress,
+                        }).finish(),
+                    },
+                ],
+                initialDeposit: [coin(changeInfo.amount, changeInfo.denom)],
+                proposer: sender,
+                title: changeInfo.title,
+                summary: changeInfo.description,
+                metadata: '',
+                expedited: true,
+            } as any),
         };
-        return this.signAndBroadCast(urlRpc, denom, chainId, proposer, [
-            message,
-        ]);
+
+        return this.signAndBroadCast(
+            chainInfo,
+            changeInfo.denom,
+            sender,
+            [message]
+        );
     };
 
-    communityPoolSpendProposal = async (
-        urlRpc,
-        denom,
-        chainId,
-        sender,
-        amount,
-        community_pool_info
-    ) => {
-        const initial_deposit = [{ denom, amount: amount.toString() }];
+    communityPoolSpendProposal = async (sender: string, govAddress: string, changeInfo: {
+        title: string;
+        description: string;
+        recipient: string;
+        denom: string;
+        amount: any;}, 
+        chainInfo: {
+            urlRpc: string;
+            chainId: string;
+    }) => {
+        const communityPoolInfo = MsgCommunityPoolSpend.fromPartial({
+            amount: [
+                {
+                    amount: changeInfo.amount,
+                    denom: changeInfo.denom,
+                },
+            ],
+            authority: govAddress,
+            recipient: changeInfo.recipient,
+        });
         const message = {
-            typeUrl: '/cosmos.gov.v1beta1.MsgSubmitProposal',
-            value: {
-                content: Any.fromPartial({
-                    typeUrl:
-                        '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
-                    value: CommunityPoolSpendProposal.encode(
-                        community_pool_info
-                    ).finish(),
-                }),
+            typeUrl: '/cosmos.gov.v1.MsgSubmitProposal',
+            value: MsgSubmitProposal.fromPartial({
+                messages: [
+                    {
+                        typeUrl:
+                            '/cosmos.distribution.v1beta1.MsgCommunityPoolSpend',
+                        value: MsgCommunityPoolSpend.encode(
+                            communityPoolInfo
+                        ).finish(),
+                    },
+                ],
+                initialDeposit: [coin(changeInfo.amount, changeInfo.denom)],
                 proposer: sender,
-                initialDeposit: initial_deposit,
-            },
+                title: changeInfo.title,
+                summary: changeInfo.description,
+                metadata: '',
+            }),
         };
-        return this.signAndBroadCast(urlRpc, denom, chainId, sender, [
-            message,
-        ]);
+
+        return this.signAndBroadCast(
+            chainInfo,
+            changeInfo.denom,
+            sender,
+            [message]
+        );
     };
 
     parameterChangeProposal = async (
-        urlRpc,
-        denom,
-        chainId,
-        proposer,
-        amount,
-        changeInfo
+        sender: string,
+        govAddress: string,
+        changeInfo: {
+            title: string;
+            description: string;
+            amount: any;
+            denom: string;
+            subspace: string,
+            key: string,
+            value: any
+        },
+        chainInfo: {
+            urlRpc: string;
+            chainId: string;
+        }
     ) => {
-        const initial_deposit = [{ denom, amount: amount.toString() }];
-        const message = {
-            typeUrl: '/cosmos.gov.v1beta1.MsgSubmitProposal',
-            value: {
-                content: Any.fromPartial({
-                    typeUrl: '/cosmos.params.v1beta1.ParameterChangeProposal',
-                    value: ParameterChangeProposal.encode(changeInfo).finish(),
+        console.log({ sender, govAddress, changeInfo, chainInfo });
+        const paramChangeInfo = ParameterChangeProposal.fromPartial({
+            title: changeInfo.title,
+            description: changeInfo.description,
+            changes: [
+                ParamChange.fromPartial({
+                    subspace: changeInfo.subspace,
+                    key: changeInfo.key,
+                    value: changeInfo.value,
                 }),
-                proposer: proposer,
-                initialDeposit: initial_deposit,
-            },
+            ],
+        });
+
+        console.log({paramChangeInfo})
+        const message = {
+            typeUrl: '/cosmos.gov.v1.MsgSubmitProposal',
+            value: MsgSubmitProposal.fromPartial({
+                messages: [
+                    {
+                        typeUrl: '/cosmos.gov.v1.MsgExecLegacyContent',
+                        value: MsgExecLegacyContent.encode({
+                            authority: govAddress,
+                            content: {
+                                typeUrl:
+                                    '/cosmos.params.v1beta1.ParameterChangeProposal',
+                                value: ParameterChangeProposal.encode(
+                                    paramChangeInfo
+                                ).finish(),
+                            },
+                        }).finish(),
+                    },
+                ],
+                initialDeposit: [coin(changeInfo.amount, changeInfo.denom)],
+                proposer: sender,
+                title: paramChangeInfo.title,
+                summary: paramChangeInfo.description,
+                metadata: '',
+            }),
         };
-        return this.signAndBroadCast(urlRpc, denom, chainId, proposer, [
-            message,
-        ]);
+
+        console.log({ message });
+
+        return this.signAndBroadCast(
+            chainInfo,
+            changeInfo.denom,
+            sender,
+            [message]
+        );
     };
 }
 

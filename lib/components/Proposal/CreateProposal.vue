@@ -4,6 +4,12 @@ import { walletStation } from '../../walletStation';
 import { VueEditor } from "vue3-editor";
 import BigNumber from 'bignumber.js';
 import { TYPE_PROPOSAL, VOTING_PERIOD_OPTIONS } from '../../../constants';
+import { QueryClient } from '@cosmjs/stargate';
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
+import {
+    QueryModuleAccountByNameRequest,
+    QueryModuleAccountByNameResponse,
+} from "cosmjs-types/cosmos/auth/v1beta1/query";
 
 const props = defineProps({
     sender: { type: String, required: true },
@@ -157,6 +163,52 @@ const handleOptionData = data => {
     }
 };
 
+const queryCosmos = async (
+    client: QueryClient,
+    requestType: any,
+    reponseType: any,
+    requestInfo: any,
+    typeUrl: string
+) => {
+    console.log({
+        client,
+        requestType,
+        reponseType,
+        requestInfo,
+        typeUrl
+    })
+    const requestData = Uint8Array.from(requestType.encode(requestInfo).finish());
+
+    const { value } = await client.queryAbci(typeUrl, requestData);
+    const res = reponseType.decode(value);
+
+    console.log({ res })
+    return res;
+};
+
+const queryGovAddress = async (urlRpc: string) => {
+    const cometClient = await Tendermint37Client.connect(urlRpc);
+    const queryClient = QueryClient.withExtensions(cometClient as any);
+
+    const govRes = (await queryCosmos(
+        queryClient,
+        QueryModuleAccountByNameRequest,
+        QueryModuleAccountByNameResponse,
+        QueryModuleAccountByNameRequest.fromPartial({
+            name: "gov",
+        }),
+        "/cosmos.auth.v1beta1.Query/ModuleAccountByName"
+    )) as QueryModuleAccountByNameResponse;
+
+    let govAddress: any = ""
+    if (govRes.account)
+        govAddress = QueryModuleAccountByNameResponse.decode(
+            govRes.account?.value
+        ).account?.typeUrl;
+
+    return govAddress
+}
+
 const handleCreateProposal = async (e: Event) => {
     e.preventDefault();
     isCreating.value = true;
@@ -165,40 +217,41 @@ const handleCreateProposal = async (e: Event) => {
     const newData = handleOptionData(data);
     const { title, description, subspace, key, value, amount, newAdmin, contract, recipient, receiveAmount } = newData;
     const { urlRpc, chainId, sender, denom } = props;
+
+    const govAddress = "orai10d07y265gmmuvt4z0w9aw880jnsr700jf39xhq"
+
     let response: any;
     try {
         if (key === TEXT_PROPOSAL) {
-            response = await walletStation.textProposal(urlRpc, denom, chainId, sender, amount, {
-                title: title,
-                description: description,
-            });
+            response = await walletStation.textProposal(sender, govAddress, { title, description, amount, denom }, { urlRpc, chainId });
         } else if (key == UPDATE_ADMIN_PROPOSAL) {
-            response = await walletStation.updateAdminProposal(urlRpc, denom, chainId, sender, amount, {
+            response = await walletStation.updateAdminProposal(sender, govAddress, {
                 title: title,
                 description: description.trim(),
                 newAdmin: newAdmin,
                 contract: contract,
-            });
-        } else if (key == COMMUNITY_POOL_SPEND_PROPOSAL) {
-            response = await walletStation.communityPoolSpendProposal(urlRpc, denom, chainId, sender, amount, {
-                title,
-                description: description.trim(),
-                recipient,
-                amount: [{ denom: props.denom, amount: (receiveAmount * Math.pow(10, 6)).toString() }],
-            });
-        } else {
-            response = await walletStation.parameterChangeProposal(urlRpc, denom, chainId, sender, amount, {
-                title: title,
-                description: description,
-                changes: [
-                    {
-                        subspace,
-                        key,
-                        value,
-                    },
-                ],
+                denom,
                 amount,
-            });
+            }, { urlRpc, chainId });
+        } else if (key == COMMUNITY_POOL_SPEND_PROPOSAL) {
+            response = await walletStation.communityPoolSpendProposal(sender, govAddress,
+                {
+                    title,
+                    description: description.trim(),
+                    recipient,
+                    amount: (receiveAmount * Math.pow(10, 6)).toString(),
+                    denom,
+                }, { urlRpc, chainId });
+        } else {
+            response = await walletStation.parameterChangeProposal(sender, govAddress, {
+                title,
+                description,
+                amount,
+                denom,
+                subspace,
+                value,
+                key
+            }, { urlRpc, chainId });
         }
         isEndProcess.value = true;
     } catch (err) {
@@ -240,11 +293,11 @@ const viewProposal = () => {
                     <div class="flex flex-col gap-2">
                         <h2>Type Proposal</h2>
                         <select v-model="typeState"
-                        class="h-10 w-1/2 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer text-white">
-                        <option v-for="i in typesProposal" :value="i.value">{{ i.label }}</option>
-                    </select>
+                            class="h-10 w-1/2 border p-2 rounded-lg border-base-300 outline-none hover:cursor-pointer text-white">
+                            <option v-for="i in typesProposal" :value="i.value">{{ i.label }}</option>
+                        </select>
                     </div>
-                    
+
                     <div class="flex flex-col gap-2">
                         <h2>Title</h2>
                         <input v-model="formData.title"
@@ -280,9 +333,10 @@ const viewProposal = () => {
                                 <option v-for="i in votingFields" :value="i.value">{{ i.label }}</option>
                             </select>
                             <input v-if="votingType === VOTING_DAY"
-                                class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white" type="number"
-                                min=1 v-model="formData.votingPeriodDay" required>
-                            <input v-else class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white"
+                                class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white"
+                                type="number" min=1 v-model="formData.votingPeriodDay" required>
+                            <input v-else
+                                class="h-10 w-2/3 rounded-lg border border-base-300 outline-none p-2 text-white"
                                 v-model="formData.votingPeriodTime" type="time" step="1" required>
                         </div>
                     </div>
@@ -376,12 +430,16 @@ const viewProposal = () => {
             <label class="modal-box bg-base-100 rounded-lg" for="" v-else>
                 <div v-if="isSuccessfully" class="flex flex-col items-center justify-center gap-5 w-full">
                     <p class="font-bold text-green-500">Create Proposal Successfully</p>
-                    <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" @click="viewProposal">View
+                    <button
+                        class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full"
+                        @click="viewProposal">View
                         Proposal</button>
                 </div>
                 <div v-else>
                     <p class="font-bold text-red-500">Create Proposal Failed</p>
-                    <button class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full" @click="viewTransaction">View
+                    <button
+                        class="!text-white btn grow bg-primary border-0 hover:brightness-150 hover:bg-primary w-full"
+                        @click="viewTransaction">View
                         Transaction</button>
                 </div>
             </label>
