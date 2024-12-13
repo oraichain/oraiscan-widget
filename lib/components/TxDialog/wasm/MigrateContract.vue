@@ -24,7 +24,7 @@ const msgs = computed(() => {
             /** CodeID is the reference to the stored WASM code */
             codeId: codeId.value,
             /** Msg json encoded message to be passed to the contract on instantiation */
-            msg: toBase64(new TextEncoder().encode(msg.value)),
+            msg: new TextEncoder().encode(msg.value),
         },
     }]
 })
