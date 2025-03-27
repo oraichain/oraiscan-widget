@@ -184,7 +184,9 @@ export default class WalletStation {
         description: string;
         recipient: string;
         denom: string;
-        amount: any;}, 
+        amount: any;
+        deposit: any
+    }, 
         chainInfo: {
             urlRpc: string;
             chainId: string;
@@ -211,7 +213,7 @@ export default class WalletStation {
                         ).finish(),
                     },
                 ],
-                initialDeposit: [coin(changeInfo.amount, changeInfo.denom)],
+                initialDeposit: [coin(changeInfo.deposit, changeInfo.denom)],
                 proposer: sender,
                 title: changeInfo.title,
                 summary: changeInfo.description,

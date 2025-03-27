@@ -239,6 +239,7 @@ const handleCreateProposal = async (e: Event) => {
                     title,
                     description: description.trim(),
                     recipient,
+                    deposit: (amount * Math.pow(10, 6)).toString(),
                     amount: (receiveAmount * Math.pow(10, 6)).toString(),
                     denom,
                 }, { urlRpc, chainId });
