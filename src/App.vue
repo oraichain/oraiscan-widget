@@ -49,6 +49,23 @@ const JUNO: Config = {
 }
 
 // @ts-ignore
+const ORAICHAIN: Config = {
+    sender: 'orai1hvr9d72r5um9lvt0rpkd4r75vrsqtw6yujhqs2',
+    endpoint: 'https://rpc.orai.io',
+    chainId: 'Oraichain',
+    hdPath: "m/44'/118/0'/0/0",
+    chainName: 'oraichain',
+    params: JSON.stringify({
+            proposal_id: '1',
+        validator_address: "orai1hvr9d72r5um9lvt0rpkd4r75vrsqtw6yujhqs2",
+        chain_name: 'oraichain',
+        contract: 'orai1hvr9d72r5um9lvt0rpkd4r75vrsqtw6yujhqs2',
+        fees: {amount: '200000', denom: 'orai'}
+    })
+}
+
+
+// @ts-ignore
 const NEUTRON: Config = {
     sender: 'neutron1m8mma95ta2zajqtmfp5c5y3wgeyqzcrc64e4gx',
     endpoint: 'https://neutron-api.polkachu.com',
@@ -77,7 +94,7 @@ const Archway: Config = {
 }
 
 
-const conf = ref(JUNO)
+const conf = ref(ORAICHAIN)
 
 const types = [
     'send',
