@@ -148,7 +148,7 @@ export class KeplerWallet implements AbstractWallet {
         };
         const tmClient = await Tendermint37Client.connect(rpc);
         // @ts-ignore
-        const offlineSigner = window.owallet.getOfflineSigner(this.chainId);
+        const offlineSigner = window.getOfflineSigner(this.chainId);
         const client = await SigningCosmWasmClient.createWithSigner(
             tmClient as any,
             offlineSigner,
