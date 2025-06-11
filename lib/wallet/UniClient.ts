@@ -1,28 +1,23 @@
-import { toBase64, fromBase64, toHex, fromBech32 } from '@cosmjs/encoding';
-import { EncodeObject, encodePubkey, Registry } from '@cosmjs/proto-signing';
-import { encodeSecp256k1Pubkey } from '@cosmjs/amino';
+import {  Registry } from '@cosmjs/proto-signing';
 import {
     createProtobufRpcClient,
     defaultRegistryTypes,
 } from '@cosmjs/stargate';
-import { AuthInfo, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
+import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import {
     AbstractWallet,
     WalletArgument,
     WalletName,
     createWallet,
 } from './Wallet';
-import { createQueryClient, createTmClient, post } from '../utils/http';
+import { createQueryClient, createTmClient } from '../utils/http';
 import { Transaction } from '../utils/type';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
 import {
     makeAuthInfoBytes,
-    makeSignDoc,
     TxBodyEncodeObject,
 } from '@cosmjs/proto-signing/build';
 import { Any } from 'cosmjs-types/google/protobuf/any';
-import { TxResponse } from '@cosmjs/tendermint-rpc';
 import type { BroadcastTxSyncResponse } from '@cosmjs/tendermint-rpc/build/tendermint37/responses';
 import {
     ServiceClientImpl,

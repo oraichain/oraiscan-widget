@@ -7,6 +7,7 @@ import { MetamaskWallet } from './wallets/MetamaskWallet';
 import { MetamaskSnapWallet } from './wallets/MetamaskSnapWallet';
 import { LeapWallet } from './wallets/LeapWallet';
 import { Owallet } from './wallets/Owallet';
+import { EncodeObject } from '@cosmjs/proto-signing';
 
 export enum WalletName {
     Owallet = 'Owallet',
@@ -50,6 +51,17 @@ export interface AbstractWallet {
     getAccounts(): Promise<Account[]>;
     supportCoinType(coinType?: string): Promise<boolean>;
     sign(transaction: Transaction): Promise<any>;
+    /**
+     * Sign and broadcast transaction directly if supported
+     */
+    signAndBroadcast?(
+        signerAddress: string,
+        messages: readonly EncodeObject[],
+        rpc: string,
+        fee?: string,
+        denom?: string,
+        memo?: string
+    ): Promise<any>;
 }
 
 export const DEFAULT_HDPATH = "m/44'/118/0'/0/0";

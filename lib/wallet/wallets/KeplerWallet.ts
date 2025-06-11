@@ -1,21 +1,24 @@
 import { fromBase64, fromBech32, toHex } from "@cosmjs/encoding";
-import { Registry, TxBodyEncodeObject, encodePubkey, makeAuthInfoBytes, makeSignDoc } from "@cosmjs/proto-signing"
+import { Registry, TxBodyEncodeObject, makeAuthInfoBytes, makeSignDoc } from "@cosmjs/proto-signing"
 import { AbstractWallet, Account, WalletArgument, WalletName, keyType } from "../Wallet"
 import { Transaction } from "../../utils/type"
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys'
 import { SignMode } from "cosmjs-types/cosmos/tx/signing/v1beta1/signing";
-import { AminoTypes, createDefaultAminoConverters } from "@cosmjs/stargate";
-import { encodeSecp256k1Pubkey, makeSignDoc as makeSignDocAmino } from "@cosmjs/amino";
-import { createWasmAminoConverters } from "@cosmjs/cosmwasm-stargate";
+import { AminoTypes, createDefaultAminoConverters, GasPrice } from "@cosmjs/stargate";
+import { makeSignDoc as makeSignDocAmino } from "@cosmjs/amino";
+import { createWasmAminoConverters, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
+import { EncodeObject } from "@cosmjs/proto-signing";
 
 export class KeplerWallet implements AbstractWallet {
+    // @ts-ignore
     name: WalletName.Keplr
     chainId: string
     registry: Registry
     conf: WalletArgument
-    aminoTypes = new AminoTypes( {...createDefaultAminoConverters(), ...createWasmAminoConverters()})
+    aminoTypes = new AminoTypes({ ...createDefaultAminoConverters(), ...createWasmAminoConverters() })
     constructor(arg: WalletArgument, registry: Registry) {
         this.chainId = arg.chainId || "cosmoshub"
         // @ts-ignore
@@ -25,7 +28,6 @@ export class KeplerWallet implements AbstractWallet {
         this.registry = registry
         this.conf = arg
     }
-    
     async getAccounts(): Promise<Account[]> {
         // const chainId = 'cosmoshub'
         // @ts-ignore
@@ -42,7 +44,7 @@ export class KeplerWallet implements AbstractWallet {
     }
     async sign(transaction: Transaction): Promise<TxRaw> {
         // sign wasm tx with signDirect
-        if(transaction.messages.findIndex(x => x.typeUrl.startsWith("/cosmwasm.wasm")) > -1) {
+        if (transaction.messages.findIndex(x => x.typeUrl.startsWith("/cosmwasm.wasm")) > -1) {
             return this.signDirect(transaction)
         }
         return this.signAmino(transaction)
@@ -107,13 +109,13 @@ export class KeplerWallet implements AbstractWallet {
         const signMode = SignMode.SIGN_MODE_LEGACY_AMINO_JSON;
         const msgs = tx.messages.map((msg) => this.aminoTypes.toAmino(msg));
         const signDoc = makeSignDocAmino(msgs, tx.fee, tx.chainId, tx.memo, tx.signerData.accountNumber, tx.signerData.sequence);
-        
+
         // @ts-ignore
         const offlineSigner = window.getOfflineSigner(this.chainId)
         const { signature, signed } = await offlineSigner.signAmino(tx.signerAddress, signDoc);
 
         const signedTxBody = {
-            messages: signed.msgs.map((msg) => this.aminoTypes.fromAmino(msg)),
+            messages: signed.msgs.map((msg: any) => this.aminoTypes.fromAmino(msg)),
             memo: signed.memo,
         };
         const signedTxBodyEncodeObject: TxBodyEncodeObject = {
@@ -137,5 +139,42 @@ export class KeplerWallet implements AbstractWallet {
             authInfoBytes: signedAuthInfoBytes,
             signatures: [fromBase64(signature.signature)],
         });
+    }
+
+    async getCosmWasmClient(rpc: string, fee?: string, denom?: string) {
+        const optionsClient = {
+            broadcastPollIntervalMs: 600,
+            gasPrice: GasPrice.fromString(`${fee}${denom}`),
+        };
+        const tmClient = await Tendermint37Client.connect(rpc);
+        // @ts-ignore
+        const offlineSigner = window.getOfflineSigner(this.chainId);
+        const client = await SigningCosmWasmClient.createWithSigner(
+            tmClient as any,
+            offlineSigner,
+            optionsClient
+        );
+        return client;
+    }
+
+    async signAndBroadcast(
+        signerAddress: string,
+        messages: readonly EncodeObject[],
+        rpc: string,
+        fee: string,
+        denom: string,
+        gas: string,
+        memo?: string
+    ): Promise<any> {
+        const client = await this.getCosmWasmClient(rpc, fee, denom);
+        return client.signAndBroadcast(signerAddress, messages, {
+            amount: [
+                {
+                    amount: fee,
+                    denom: denom
+                }
+            ],
+            gas
+        }, memo);
     }
 }

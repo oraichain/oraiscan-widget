@@ -1,69 +1,99 @@
-import { fromBase64, fromBech32, toHex } from "@cosmjs/encoding";
-import { Registry, TxBodyEncodeObject, encodePubkey, makeAuthInfoBytes, makeSignDoc } from "@cosmjs/proto-signing"
-import { AbstractWallet, Account, WalletArgument, WalletName, keyType } from "../Wallet"
-import { Transaction } from "../../utils/type"
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { Any } from "cosmjs-types/google/protobuf/any";
-import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys'
-import { SignMode } from "cosmjs-types/cosmos/tx/signing/v1beta1/signing";
-import { AminoTypes, createDefaultAminoConverters } from "@cosmjs/stargate";
-import { encodeSecp256k1Pubkey, makeSignDoc as makeSignDocAmino } from "@cosmjs/amino";
-import { createWasmAminoConverters } from "@cosmjs/cosmwasm-stargate";
-
+import { fromBase64, fromBech32, toHex } from '@cosmjs/encoding';
+import {
+    EncodeObject,
+    Registry,
+    TxBodyEncodeObject,
+    encodePubkey,
+    makeAuthInfoBytes,
+    makeSignDoc,
+} from '@cosmjs/proto-signing';
+import {
+    AbstractWallet,
+    Account,
+    WalletArgument,
+    WalletName,
+    keyType,
+} from '../Wallet';
+import { Transaction } from '../../utils/type';
+import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+import { Any } from 'cosmjs-types/google/protobuf/any';
+import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys';
+import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
+import { AminoTypes, createDefaultAminoConverters, GasPrice } from '@cosmjs/stargate';
+import {
+    encodeSecp256k1Pubkey,
+    makeSignDoc as makeSignDocAmino,
+} from '@cosmjs/amino';
+import {
+    createWasmAminoConverters,
+    SigningCosmWasmClient,
+} from '@cosmjs/cosmwasm-stargate';
+import { Tendermint37Client } from '@cosmjs/tendermint-rpc';
+import { Decimal } from '@cosmjs/math';
 export class Owallet implements AbstractWallet {
-    name: WalletName.Owallet
-    chainId: string
-    registry: Registry
-    conf: WalletArgument
-    aminoTypes = new AminoTypes( {...createDefaultAminoConverters(), ...createWasmAminoConverters()})
+    // @ts-ignore
+    name: WalletName.Owallet;
+    chainId: string;
+    registry: Registry;
+    conf: WalletArgument;
+    aminoTypes = new AminoTypes({
+        ...createDefaultAminoConverters(),
+        ...createWasmAminoConverters(),
+    });
     constructor(arg: WalletArgument, registry: Registry) {
-        this.chainId = arg.chainId || "cosmoshub"
+        this.chainId = arg.chainId || 'cosmoshub';
         // @ts-ignore
         if (!window.getOfflineSigner || !window.owallet) {
-            throw new Error('Please install owallet extension')
+            throw new Error('Please install owallet extension');
         }
-        this.registry = registry
-        this.conf = arg
+        this.registry = registry;
+        this.conf = arg;
     }
-    
+
     async getAccounts(): Promise<Account[]> {
         // const chainId = 'cosmoshub'
         // @ts-ignore
-        await window.owallet.enable(this.chainId)
+        await window.owallet.enable(this.chainId);
         // @ts-ignore
-        const offlineSigner = window.owallet.getOfflineSigner(this.chainId)
-        return offlineSigner.getAccounts()
+        const offlineSigner = window.owallet.getOfflineSigner(this.chainId);
+        return offlineSigner.getAccounts();
     }
     supportCoinType(coinType?: string | undefined): Promise<boolean> {
         return Promise.resolve(true);
     }
     isEthermint() {
-        return this.conf.hdPath && this.conf.hdPath.startsWith("m/44'/60")
+        return this.conf.hdPath && this.conf.hdPath.startsWith("m/44'/60");
     }
     async sign(transaction: Transaction): Promise<TxRaw> {
         // sign wasm tx with signDirect
-        if(transaction.messages.findIndex(x => x.typeUrl.startsWith("/cosmwasm.wasm")) > -1) {
-            return this.signDirect(transaction)
+        if (
+            transaction.messages.findIndex((x) =>
+                x.typeUrl.startsWith('/cosmwasm.wasm')
+            ) > -1
+        ) {
+            return this.signDirect(transaction);
         }
-        return this.signAmino(transaction)
+        return this.signAmino(transaction);
     }
     // @deprecated use signAmino instead
     // because signDirect is not supported ledger wallet
     async signDirect(transaction: Transaction): Promise<TxRaw> {
-        const accouts = await this.getAccounts()
-        const hex = toHex(fromBech32(transaction.signerAddress).data)
-        const accountFromSigner = accouts.find((account) => toHex(fromBech32(account.address).data) === hex);
+        const accouts = await this.getAccounts();
+        const hex = toHex(fromBech32(transaction.signerAddress).data);
+        const accountFromSigner = accouts.find(
+            (account) => toHex(fromBech32(account.address).data) === hex
+        );
         if (!accountFromSigner) {
-            throw new Error("Failed to retrieve account from signer");
+            throw new Error('Failed to retrieve account from signer');
         }
         const pubkey = Any.fromPartial({
             typeUrl: keyType(transaction.chainId),
             value: PubKey.encode({
                 key: accountFromSigner.pubkey,
-            }).finish()
-        })
+            }).finish(),
+        });
         const txBodyEncodeObject: TxBodyEncodeObject = {
-            typeUrl: "/cosmos.tx.v1beta1.TxBody",
+            typeUrl: '/cosmos.tx.v1beta1.TxBody',
             value: {
                 messages: transaction.messages,
                 memo: transaction.memo,
@@ -76,13 +106,21 @@ export class Owallet implements AbstractWallet {
             transaction.fee.amount,
             gasLimit,
             transaction.fee.granter,
-            transaction.fee.payer,
+            transaction.fee.payer
         );
-        const signDoc = makeSignDoc(txBodyBytes, authInfoBytes, transaction.chainId, transaction.signerData.accountNumber);
+        const signDoc = makeSignDoc(
+            txBodyBytes,
+            authInfoBytes,
+            transaction.chainId,
+            transaction.signerData.accountNumber
+        );
 
         // @ts-ignore
-        const offlineSigner = window.owallet.getOfflineSigner(this.chainId)
-        const { signature, signed } = await offlineSigner.signDirect(transaction.signerAddress, signDoc);;
+        const offlineSigner = window.owallet.getOfflineSigner(this.chainId);
+        const { signature, signed } = await offlineSigner.signDirect(
+            transaction.signerAddress,
+            signDoc
+        );
         return TxRaw.fromPartial({
             bodyBytes: signed.bodyBytes,
             authInfoBytes: signed.authInfoBytes,
@@ -91,36 +129,50 @@ export class Owallet implements AbstractWallet {
     }
 
     async signAmino(tx: Transaction): Promise<TxRaw> {
-        const accouts = await this.getAccounts()
-        const hex = toHex(fromBech32(tx.signerAddress).data)
-        const accountFromSigner = accouts.find((account) => toHex(fromBech32(account.address).data) === hex);
+        const accouts = await this.getAccounts();
+        const hex = toHex(fromBech32(tx.signerAddress).data);
+        const accountFromSigner = accouts.find(
+            (account) => toHex(fromBech32(account.address).data) === hex
+        );
         if (!accountFromSigner) {
-            throw new Error("Failed to retrieve account from signer");
+            throw new Error('Failed to retrieve account from signer');
         }
         // const pubkey = encodePubkey(encodeSecp256k1Pubkey(accountFromSigner.pubkey));
         const pubkey = Any.fromPartial({
             typeUrl: keyType(tx.chainId),
             value: PubKey.encode({
                 key: accountFromSigner.pubkey,
-            }).finish()
-        })
+            }).finish(),
+        });
         const signMode = SignMode.SIGN_MODE_LEGACY_AMINO_JSON;
         const msgs = tx.messages.map((msg) => this.aminoTypes.toAmino(msg));
-        const signDoc = makeSignDocAmino(msgs, tx.fee, tx.chainId, tx.memo, tx.signerData.accountNumber, tx.signerData.sequence);
-        
+        const signDoc = makeSignDocAmino(
+            msgs,
+            tx.fee,
+            tx.chainId,
+            tx.memo,
+            tx.signerData.accountNumber,
+            tx.signerData.sequence
+        );
+
         // @ts-ignore
-        const offlineSigner = window.owallet.getOfflineSigner(this.chainId)
-        const { signature, signed } = await offlineSigner.signAmino(tx.signerAddress, signDoc);
+        const offlineSigner = window.owallet.getOfflineSigner(this.chainId);
+        const { signature, signed } = await offlineSigner.signAmino(
+            tx.signerAddress,
+            signDoc
+        );
 
         const signedTxBody = {
-            messages: signed.msgs.map((msg) => this.aminoTypes.fromAmino(msg)),
+            messages: signed.msgs.map((msg: any) => this.aminoTypes.fromAmino(msg)),
             memo: signed.memo,
         };
         const signedTxBodyEncodeObject: TxBodyEncodeObject = {
-            typeUrl: "/cosmos.tx.v1beta1.TxBody",
+            typeUrl: '/cosmos.tx.v1beta1.TxBody',
             value: signedTxBody,
         };
-        const signedTxBodyBytes = this.registry.encode(signedTxBodyEncodeObject);
+        const signedTxBodyBytes = this.registry.encode(
+            signedTxBodyEncodeObject
+        );
 
         const signedGasLimit = Number(signed.fee.gas);
         const signedSequence = Number(signed.sequence);
@@ -130,12 +182,59 @@ export class Owallet implements AbstractWallet {
             signedGasLimit,
             signed.fee.granter,
             signed.fee.payer,
-            signMode,
+            signMode
         );
         return TxRaw.fromPartial({
             bodyBytes: signedTxBodyBytes,
             authInfoBytes: signedAuthInfoBytes,
             signatures: [fromBase64(signature.signature)],
         });
+    }
+
+    async getCosmWasmClient(rpc: string, fee?: string, denom?: string) {
+        const optionsClient = {
+            broadcastPollIntervalMs: 600,
+            gasPrice: GasPrice.fromString(`${fee}${denom}`),
+        };
+        const tmClient = await Tendermint37Client.connect(rpc);
+        // @ts-ignore
+        const offlineSigner = window.owallet.getOfflineSigner(this.chainId);
+        const client = await SigningCosmWasmClient.createWithSigner(
+            tmClient as any,
+            offlineSigner,
+            optionsClient
+        );
+        return client;
+    }
+
+    async signAndBroadcast(
+        signerAddress: string,
+        messages: readonly EncodeObject[],
+        rpc: string,
+        amountFee: string,
+        denom: string,
+        gas: string,
+        memo?: string
+    ): Promise<any> {
+        console.log('signAndBroadcast signAndBroadcast');
+        // @ts-ignore
+        const client = await this.getCosmWasmClient(
+           rpc,
+           amountFee,
+           denom
+        );
+
+        const res = await client.signAndBroadcast(signerAddress, messages,
+            {
+                amount: [
+                    {
+                        amount: amountFee,
+                        denom: denom
+                    }
+                ],
+                gas
+            }
+        , memo);
+        return res;
     }
 }
